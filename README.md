@@ -1,4 +1,4 @@
-# Japan Diaries Card Demo
+# Travel Planner Demo
 
 一个零依赖的旅行卡片交互 Demo，参考移动端叠放卡片视觉实现。
 
