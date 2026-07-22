@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#15110d">
+  <title>Japan Diaries — Travel Journal</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --ink:#3d3b3a; --paper:#f4f0e8; --card-radius:30px; }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin:0; display:grid; place-items:center; background:radial-gradient(circle at 12% 10%, rgba(125,88,50,.22), transparent 24rem),#15110d; color:var(--ink); overflow:hidden; }
+    button, input { font:inherit; }
+    .phone { position:relative; width:min(100vw,430px); height:min(100dvh,900px); min-height:640px; padding:10px; isolation:isolate; }
+    .journal { height:100%; overflow:hidden; border-radius:40px; background:var(--paper); box-shadow:0 24px 80px rgba(0,0,0,.42); }
+    .masthead { position:relative; height:160px; padding:30px 22px 18px; z-index:30; background:linear-gradient(180deg,#f4f0e8 0%,#f4f0e8 79%,rgba(244,240,232,.88) 90%,rgba(244,240,232,0) 100%); }
+    .eyebrow { margin:0 0 8px; color:#6b6965; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { margin:0; font-size:clamp(38px,10vw,46px); font-weight:350; line-height:.82; letter-spacing:-.055em; }
+    .stamp { position:absolute; right:24px; bottom:23px; width:46px; height:46px; display:grid; place-items:center; overflow:hidden; border:2px solid rgba(65,68,67,.72); border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.12),transparent),url('assets/kyoto.svg') center/cover,#aac7c7; box-shadow:inset 0 0 0 3px rgba(255,255,255,.35); }
+    .stamp::after { content:"日本"; align-self:end; width:100%; padding:2px 0 4px; color:white; background:rgba(51,61,59,.55); font-size:7px; font-weight:800; letter-spacing:.12em; text-align:center; }
+    .deck { position:relative; height:calc(100% - 160px); margin:0 10px 10px; overflow:hidden; border-radius:29px; background:#d8cfc2; touch-action:pan-y; }
+    .trip-card { --accent:#9d4831; --accent-rgb:157,72,49; position:absolute; inset-block:0; left:var(--left,0px); width:var(--width,calc(100% - var(--left,0px))); min-width:0; overflow:hidden; border:0; border-radius:var(--card-radius) 0 0 var(--card-radius); color:white; background-color:var(--accent); background-image:linear-gradient(180deg,rgba(var(--accent-rgb),.68),rgba(var(--accent-rgb),.88)),var(--photo); background-position:center; background-size:cover; box-shadow:-10px 0 24px rgba(38,25,17,.12); transition:left .52s cubic-bezier(.2,.75,.2,1),width .52s cubic-bezier(.2,.75,.2,1),filter .3s ease,opacity .35s ease,transform .45s ease; cursor:pointer; text-align:left; -webkit-tap-highlight-color:transparent; }
+    .trip-card.is-entering { opacity:0; transform:translateX(36px); }
+    .trip-card::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,rgba(255,255,255,.08),transparent 25%,transparent 80%,rgba(255,255,255,.05)); }
+    .trip-card.is-active { z-index:20!important; border-radius:var(--card-radius); cursor:default; box-shadow:-12px 0 30px rgba(30,20,16,.2); }
+    .trip-card:not(.is-active):hover { filter:brightness(1.08) saturate(1.05); }
+    .trip-card:focus-visible { outline:3px solid white; outline-offset:-6px; }
+    .card-tab { position:absolute; top:17px; left:14px; z-index:3; display:flex; flex-direction:column; gap:8px; align-items:flex-start; transition:opacity .25s ease,transform .45s ease; }
+    .avatar { width:31px; height:31px; border:2px solid rgba(255,255,255,.72); border-radius:50%; object-fit:cover; background:rgba(255,255,255,.25); box-shadow:0 2px 10px rgba(0,0,0,.18); }
+    .tag { max-width:78px; overflow:hidden; padding:5px 9px; border-radius:999px; color:#4e4b49; background:rgba(255,255,255,.96); box-shadow:0 2px 8px rgba(0,0,0,.09); font-size:9px; font-weight:800; letter-spacing:.05em; line-height:1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+    .card-content { position:absolute; inset:36px 24px 24px; z-index:2; display:flex; flex-direction:column; opacity:0; transform:translateX(24px); pointer-events:none; transition:opacity .24s ease,transform .42s ease; }
+    .is-active .card-tab { opacity:0; transform:translateY(-12px); }
+    .is-active .card-content { opacity:1; transform:none; pointer-events:auto; transition-delay:.15s; }
+    .card-index { position:absolute; top:-11px; right:-2px; margin:0; color:rgba(255,255,255,.9); font-size:clamp(78px,24vw,116px); font-weight:250; line-height:1; letter-spacing:-.08em; }
+    .card-title { position:relative; max-width:58%; margin:2px 0 14px; font-size:clamp(30px,8vw,38px); font-weight:650; line-height:1; letter-spacing:-.035em; }
+    .ai-badge { position:relative; align-self:flex-start; margin:0 0 9px; padding:5px 8px; border:1px solid rgba(255,255,255,.42); border-radius:999px; background:rgba(255,255,255,.13); font-size:8px; font-weight:850; letter-spacing:.12em; }
+    .card-copy { max-width:230px; margin:0; font-size:16px; line-height:1.42; }
+    .stats { display:flex; gap:28px; margin-top:36px; }
+    .stat strong,.stat small { display:block; }
+    .stat strong { font-size:20px; line-height:1.1; }
+    .stat small { margin-top:4px; color:rgba(255,255,255,.68); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .card-actions { display:flex; align-items:center; justify-content:flex-end; width:100%; margin-top:auto; }
+    .explore { display:none; align-items:center; gap:8px; min-height:44px; padding:0 15px; border:1px solid rgba(255,255,255,.38); border-radius:999px; color:white; background:rgba(28,18,14,.16); backdrop-filter:blur(8px); cursor:pointer; }
+    .explore:hover { background:rgba(255,255,255,.18); }
+    .explore span { font-size:13px; font-weight:750; }
+    .trip-composer { width:58px; height:58px; display:flex; align-items:center; justify-content:flex-end; overflow:hidden; border-radius:999px; background:white; box-shadow:0 12px 26px rgba(35,24,20,.2); transition:width .48s cubic-bezier(.2,.75,.2,1); }
+    .trip-composer.is-open { width:100%; }
+    .add-trip { position:relative; flex:0 0 58px; width:58px; height:58px; display:grid; place-items:center; border:0; border-radius:50%; color:#2b5ed7; background:white; cursor:pointer; transition:transform .3s ease; }
+    .add-trip::before,.add-trip::after { content:""; position:absolute; width:20px; height:2px; background:currentColor; }
+    .add-trip::after { transform:rotate(90deg); }
+    .add-trip:hover { transform:translateY(-2px); }
+    .add-trip:active { transform:scale(.96); }
+    .is-open .add-trip { flex-basis:46px; width:46px; transform:rotate(45deg); }
+    .query-input { min-width:0; flex:1; width:0; height:44px; padding:0 4px; border:0; outline:0; color:#34302d; background:transparent; font-size:13px; opacity:0; transition:opacity .2s ease .16s; }
+    .query-input::placeholder { color:#8c8985; }
+    .is-open .query-input { opacity:1; }
+    .send-trip { flex:0 0 0; width:0; height:42px; overflow:hidden; padding:0; border:0; border-radius:50%; color:white; background:#2b5ed7; font-size:18px; font-weight:800; opacity:0; cursor:pointer; transform:scale(.7); transition:flex-basis .3s ease,width .3s ease,opacity .2s ease,transform .3s ease; }
+    .is-open .send-trip { flex-basis:42px; width:42px; margin-right:8px; opacity:1; transform:scale(1); }
+    .send-trip:disabled { color:transparent; opacity:.7; }
+    .send-trip:disabled::after { content:""; display:block; width:14px; height:14px; margin:auto; border:2px solid rgba(255,255,255,.45); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .hint { display:none; }
+    .toast { position:fixed; z-index:100; left:50%; bottom:max(20px,env(safe-area-inset-bottom)); translate:-50% 20px; width:max-content; max-width:calc(100vw - 40px); padding:12px 16px; border-radius:12px; color:white; background:#29231f; box-shadow:0 12px 30px rgba(0,0,0,.25); font-size:13px; opacity:0; pointer-events:none; transition:.25s ease; }
+    .toast.show { opacity:1; translate:-50% 0; }
+    @media (max-height:720px) { .masthead{height:138px;padding-top:22px}.deck{height:calc(100% - 138px)}.card-content{inset-block-start:28px}.stats{margin-top:22px}.hint{display:none} }
+    @media (min-width:700px) { body{padding:30px}.phone{height:min(calc(100dvh - 60px),880px)} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important} }
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="日本旅行日记卡片演示"><section class="journal">
+    <header class="masthead"><p class="eyebrow">My travel journal</p><h1>Japan<br>Diaries.</h1><div class="stamp" aria-hidden="true"></div></header>
+    <section class="deck" aria-label="旅行目的地卡片">
+      <article class="trip-card" tabindex="0" role="button" aria-label="展开北海道卡片" style="--accent:#bd5236;--accent-rgb:189,82,54;--photo:url('assets/hokkaido.svg')">
+        <div class="card-tab"><img class="avatar" alt="" src="assets/hokkaido.svg"><span class="tag">Hokkaido</span></div>
+        <div class="card-content"><span class="card-index" aria-hidden="true">01</span><h2 class="card-title">Hokkaido</h2><p class="card-copy">Snow-soft mornings, volcanic lakes and the quiet edge of northern Japan.</p><div class="stats"><div class="stat"><strong>43.1N</strong><small>Lat</small></div><div class="stat"><strong>1.2K</strong><small>Km / trip</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
+      </article>
+      <article class="trip-card is-active" tabindex="0" role="button" aria-label="当前展开：京都" style="--accent:#0c8f91;--accent-rgb:12,143,145;--photo:url('assets/kyoto.svg')">
+        <div class="card-tab"><img class="avatar" alt="" src="assets/kyoto.svg"><span class="tag">Kyoto</span></div>
+        <div class="card-content"><span class="card-index" aria-hidden="true">02</span><h2 class="card-title">Kyoto</h2><p class="card-copy">A study in patience. Architectural poetry meeting the maple-lined paths of the Higashiyama.</p><div class="stats"><div class="stat"><strong>35.0N</strong><small>Lat</small></div><div class="stat"><strong>18.4K</strong><small>Steps / day</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
+      </article>
+      <article class="trip-card" tabindex="0" role="button" aria-label="展开直岛卡片" style="--accent:#bf5800;--accent-rgb:191,88,0;--photo:url('assets/naoshima.svg')">
+        <div class="card-tab"><img class="avatar" alt="" src="assets/naoshima.svg"><span class="tag">Naoshima</span></div>
+        <div class="card-content"><span class="card-index" aria-hidden="true">03</span><h2 class="card-title">Naoshima</h2><p class="card-copy">Art, architecture and island air — a surreal gallery scattered beside the Seto Inland Sea.</p><div class="stats"><div class="stat"><strong>34.5N</strong><small>Lat</small></div><div class="stat"><strong>14</strong><small>Art stops</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
+      </article>
+      <article class="trip-card" tabindex="0" role="button" aria-label="展开东京卡片" style="--accent:#854963;--accent-rgb:133,73,99;--photo:url('assets/tokyo.svg')">
+        <div class="card-tab"><img class="avatar" alt="" src="assets/tokyo.svg"><span class="tag">Tokyo</span></div>
+        <div class="card-content"><span class="card-index" aria-hidden="true">04</span><h2 class="card-title">Tokyo</h2><p class="card-copy">The hyper-density experiment. 37 million souls moving in a coordinated grid of neon and steel.</p><div class="stats"><div class="stat"><strong>35.6N</strong><small>Lat</small></div><div class="stat"><strong>2.3K</strong><small>Steps / h</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
+      </article>
+      <span class="hint" aria-hidden="true">点击卡片或使用 ← → 切换</span>
+    </section>
+  </section></main>
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script>
+    const deck = document.querySelector('.deck');
+    const hint = document.querySelector('.hint');
+    const toast = document.querySelector('.toast');
+    let cards = [...document.querySelectorAll('.trip-card')];
+    let active = cards.findIndex(card => card.classList.contains('is-active'));
+    let touchStartX = null;
+    let toastTimer;
+    let composerOpen = null;
+
+    const generatedStyles = [
+      { accent:'#315c69', rgb:'49,92,105', photo:'assets/hokkaido.svg' },
+      { accent:'#6f5445', rgb:'111,84,69', photo:'assets/kyoto.svg' },
+      { accent:'#79524f', rgb:'121,82,79', photo:'assets/tokyo.svg' },
+      { accent:'#8e5d19', rgb:'142,93,25', photo:'assets/naoshima.svg' }
+    ];
+
+    function layoutCards() {
+      const width = deck.clientWidth;
+      const handle = Math.max(14, Math.min(42, (width - 215) / Math.max(cards.length - 1, 1)));
+      const rightHandle = Math.max(14, Math.min(32, handle * .78));
+      const activeLeft = active * handle;
+      const rightCount = cards.length - active - 1;
+      const activeRight = composerOpen ? 0 : rightCount * rightHandle;
+
+      cards.forEach((card, index) => {
+        let left;
+        let cardWidth;
+        if (index < active) {
+          left = index * handle;
+          cardWidth = width - left;
+        } else if (index === active) {
+          left = activeLeft;
+          cardWidth = width - activeLeft - activeRight;
+        } else {
+          left = width - (cards.length - index) * rightHandle;
+          cardWidth = width - left;
+        }
+        card.style.setProperty('--left', `${left}px`);
+        card.style.setProperty('--width', `${cardWidth}px`);
+        card.style.zIndex = index < active ? index + 1 : cards.length - index;
+      });
+    }
+
+    function selectCard(index, focus = false) {
+      closeComposer();
+      active = (index + cards.length) % cards.length;
+      cards.forEach((card, i) => {
+        const selected = i === active;
+        const title = card.querySelector('.card-title').textContent;
+        card.classList.toggle('is-active', selected);
+        card.setAttribute('aria-label', selected ? `当前展开：${title}` : `展开${title}卡片`);
+        card.setAttribute('aria-pressed', String(selected));
+      });
+      hint.style.opacity = '0';
+      layoutCards();
+      if (focus) cards[active].focus({ preventScroll:true });
+    }
+
+    function bindCard(card) {
+      card.addEventListener('click', event => {
+        if (event.target.closest('button,input,form')) return;
+        selectCard(cards.indexOf(card));
+      });
+      card.addEventListener('keydown', event => {
+        if (event.target.closest('input,button,form')) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          selectCard(cards.indexOf(card));
+        }
+      });
+      bindComposer(card.querySelector('.trip-composer'));
+    }
+
+    function bindComposer(form) {
+      const toggle = form.querySelector('.add-trip');
+      const input = form.querySelector('.query-input');
+      const send = form.querySelector('.send-trip');
+
+      toggle.addEventListener('click', () => {
+        if (form.classList.contains('is-open')) {
+          closeComposer();
+          return;
+        }
+        closeComposer();
+        composerOpen = form;
+        form.classList.add('is-open');
+        toggle.setAttribute('aria-label', '关闭 AI 输入框');
+        layoutCards();
+        requestAnimationFrame(() => input.focus());
+      });
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const query = input.value.trim();
+        if (!query) {
+          input.focus();
+          showToast('先告诉 AI 你想去哪里');
+          return;
+        }
+        send.disabled = true;
+        input.disabled = true;
+        setTimeout(() => {
+          createAICard(query);
+          input.value = '';
+          input.disabled = false;
+          send.disabled = false;
+        }, 650);
+      });
+    }
+
+    function closeComposer() {
+      if (!composerOpen) return;
+      composerOpen.classList.remove('is-open');
+      composerOpen.querySelector('.add-trip').setAttribute('aria-label', '打开 AI 输入框');
+      composerOpen = null;
+      layoutCards();
+    }
+
+    function inferDestination(query) {
+      const places = [
+        ['北海道','Hokkaido'],['京都','Kyoto'],['大阪','Osaka'],['东京','Tokyo'],['東京','Tokyo'],
+        ['冲绳','Okinawa'],['沖繩','Okinawa'],['奈良','Nara'],['镰仓','Kamakura'],['鎌倉','Kamakura'],
+        ['富士','Mt. Fuji'],['神户','Kobe'],['福冈','Fukuoka'],['札幌','Sapporo']
+      ];
+      return places.find(([key]) => query.includes(key))?.[1] || 'New Journey';
+    }
+
+    function escapeHTML(value) {
+      return value.replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    }
+
+    function createAICard(query) {
+      const title = inferDestination(query);
+      const style = generatedStyles[(cards.length - 4) % generatedStyles.length];
+      const number = String(cards.length + 1).padStart(2, '0');
+      const safeQuery = escapeHTML(query.slice(0, 72));
+      const card = document.createElement('article');
+      card.className = 'trip-card is-entering';
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.style.cssText = `--accent:${style.accent};--accent-rgb:${style.rgb};--photo:url('${style.photo}')`;
+      card.innerHTML = `
+        <div class="card-tab"><img class="avatar" alt="" src="${style.photo}"><span class="tag">${title}</span></div>
+        <div class="card-content">
+          <span class="card-index" aria-hidden="true">${number}</span>
+          <span class="ai-badge">AI RESPONSE</span>
+          <h2 class="card-title">${title}</h2>
+          <p class="card-copy">“${safeQuery}” — 我建议从城市漫步、当地风味和一段留白时间开始，形成轻松而可执行的旅行节奏。</p>
+          <div class="stats"><div class="stat"><strong>AI</strong><small>Curated</small></div><div class="stat"><strong>READY</strong><small>New plan</small></div></div>
+          <div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="继续问 AI…" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div>
+        </div>`;
+
+      deck.insertBefore(card, hint);
+      cards.push(card);
+      bindCard(card);
+      composerOpen = null;
+      selectCard(cards.length - 1);
+      requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove('is-entering')));
+      showToast('AI 已生成一张新的旅行卡片');
+    }
+
+    cards.forEach(bindCard);
+    deck.addEventListener('touchstart', event => { touchStartX = event.changedTouches[0].clientX; }, { passive:true });
+    deck.addEventListener('touchend', event => {
+      if (touchStartX === null || composerOpen) return;
+      const delta = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(delta) > 48) selectCard(active + (delta < 0 ? 1 : -1));
+      touchStartX = null;
+    }, { passive:true });
+    document.addEventListener('keydown', event => {
+      if (event.target.matches('input')) return;
+      if (event.key === 'ArrowRight') selectCard(active + 1, true);
+      if (event.key === 'ArrowLeft') selectCard(active - 1, true);
+    });
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add('show');
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+    new ResizeObserver(layoutCards).observe(deck);
+    selectCard(active);
+  </script>
+</body>
+</html>
