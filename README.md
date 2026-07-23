@@ -7,7 +7,7 @@
 > [!IMPORTANT]
 > 当前版本是可交互的前端 Demo。AI 使用关键词识别和模板数据模拟，尚未连接真实大模型、小红书、地图、预算服务或云端账号。
 
-![旅行手账总览](docs/images/overview.png)
+![旅行手账总览] <img width="1129" height="1201" alt="image" src="https://github.com/user-attachments/assets/8f3ff3a4-fb61-4cad-8e05-81c4d4171ed0" /> 
 
 ## 产品定位
 
@@ -39,7 +39,7 @@ AI 不会直接覆盖旅行记录。新建页面或修改当前页面前，必�
 
 | AI 执行确认 | 移动端体验 |
 | --- | --- |
-| (<img width="1129" height="808" alt="image" src="https://github.com/user-attachments/assets/14139920-dd56-40f0-bc3e-3b1a5a0793c7" /><img width="1129" height="808" alt="image" src="https://github.com/user-attachments/assets/d9e932c1-2a7a-43e5-8014-b75db67dd977" />) | (<img width="1129" height="1201" alt="image" src="https://github.com/user-attachments/assets/8f3ff3a4-fb61-4cad-8e05-81c4d4171ed0" />) |
+| <img width="1129" height="808" alt="image" src="https://github.com/user-attachments/assets/14139920-dd56-40f0-bc3e-3b1a5a0793c7" /><img width="1129" height="808" alt="image" src="https://github.com/user-attachments/assets/d9e932c1-2a7a-43e5-8014-b75db67dd977" />| <img width="1129" height="1201" alt="image" src="https://github.com/user-attachments/assets/8f3ff3a4-fb61-4cad-8e05-81c4d4171ed0" /> |
 
 当前 Demo 支持：
 
