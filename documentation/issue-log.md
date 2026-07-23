@@ -67,3 +67,10 @@
 
 - Status: Implemented
 - Decision: AI 浮动入口、展开状态和回复标题统一采用浅咖啡色，保持右下角交互区域的视觉一致性。
+
+## README-001 — GitHub 产品主页升级
+
+- Status: In progress
+- Goal: 用中文 README 清楚解释产品定位、核心优势、使用方法、当前限制和后续方向。
+- Deliverables: 桌面总览、AI 确认流程和移动端三张无隐私 Demo 截图；README 使用仓库相对路径展示。
+- Guardrail: 明确当前 AI 与旅行数据均为前端模拟，不宣传尚未实现的真实模型、外部数据或云端能力。
