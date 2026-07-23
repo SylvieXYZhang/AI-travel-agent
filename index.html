@@ -3,277 +3,456 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#15110d">
-  <title>Japan Diaries — Travel Journal</title>
+  <meta name="theme-color" content="#eee8dc">
+  <title>世界那么大 · 旅行手账</title>
   <style>
-    :root { color-scheme: light; font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --ink:#3d3b3a; --paper:#f4f0e8; --card-radius:30px; }
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; }
-    body { margin:0; display:grid; place-items:center; background:radial-gradient(circle at 12% 10%, rgba(125,88,50,.22), transparent 24rem),#15110d; color:var(--ink); overflow:hidden; }
-    button, input { font:inherit; }
-    .phone { position:relative; width:min(100vw,430px); height:min(100dvh,900px); min-height:640px; padding:10px; isolation:isolate; }
-    .journal { height:100%; overflow:hidden; border-radius:40px; background:var(--paper); box-shadow:0 24px 80px rgba(0,0,0,.42); }
-    .masthead { position:relative; height:160px; padding:30px 22px 18px; z-index:30; background:linear-gradient(180deg,#f4f0e8 0%,#f4f0e8 79%,rgba(244,240,232,.88) 90%,rgba(244,240,232,0) 100%); }
-    .eyebrow { margin:0 0 8px; color:#6b6965; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
-    h1 { margin:0; font-size:clamp(38px,10vw,46px); font-weight:350; line-height:.82; letter-spacing:-.055em; }
-    .stamp { position:absolute; right:24px; bottom:23px; width:46px; height:46px; display:grid; place-items:center; overflow:hidden; border:2px solid rgba(65,68,67,.72); border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.12),transparent),url('assets/kyoto.svg') center/cover,#aac7c7; box-shadow:inset 0 0 0 3px rgba(255,255,255,.35); }
-    .stamp::after { content:"日本"; align-self:end; width:100%; padding:2px 0 4px; color:white; background:rgba(51,61,59,.55); font-size:7px; font-weight:800; letter-spacing:.12em; text-align:center; }
-    .deck { position:relative; height:calc(100% - 160px); margin:0 10px 10px; overflow:hidden; border-radius:29px; background:#d8cfc2; touch-action:pan-y; }
-    .trip-card { --accent:#9d4831; --accent-rgb:157,72,49; position:absolute; inset-block:0; left:var(--left,0px); width:var(--width,calc(100% - var(--left,0px))); min-width:0; overflow:hidden; border:0; border-radius:var(--card-radius) 0 0 var(--card-radius); color:white; background-color:var(--accent); background-image:linear-gradient(180deg,rgba(var(--accent-rgb),.68),rgba(var(--accent-rgb),.88)),var(--photo); background-position:center; background-size:cover; box-shadow:-10px 0 24px rgba(38,25,17,.12); transition:left .52s cubic-bezier(.2,.75,.2,1),width .52s cubic-bezier(.2,.75,.2,1),filter .3s ease,opacity .35s ease,transform .45s ease; cursor:pointer; text-align:left; -webkit-tap-highlight-color:transparent; }
-    .trip-card.is-entering { opacity:0; transform:translateX(36px); }
-    .trip-card::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,rgba(255,255,255,.08),transparent 25%,transparent 80%,rgba(255,255,255,.05)); }
-    .trip-card.is-active { z-index:20!important; border-radius:var(--card-radius); cursor:default; box-shadow:-12px 0 30px rgba(30,20,16,.2); }
-    .trip-card:not(.is-active):hover { filter:brightness(1.08) saturate(1.05); }
-    .trip-card:focus-visible { outline:3px solid white; outline-offset:-6px; }
-    .card-tab { position:absolute; top:17px; left:14px; z-index:3; display:flex; flex-direction:column; gap:8px; align-items:flex-start; transition:opacity .25s ease,transform .45s ease; }
-    .avatar { width:31px; height:31px; border:2px solid rgba(255,255,255,.72); border-radius:50%; object-fit:cover; background:rgba(255,255,255,.25); box-shadow:0 2px 10px rgba(0,0,0,.18); }
-    .tag { max-width:78px; overflow:hidden; padding:5px 9px; border-radius:999px; color:#4e4b49; background:rgba(255,255,255,.96); box-shadow:0 2px 8px rgba(0,0,0,.09); font-size:9px; font-weight:800; letter-spacing:.05em; line-height:1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
-    .card-content { position:absolute; inset:36px 24px 24px; z-index:2; display:flex; flex-direction:column; opacity:0; transform:translateX(24px); pointer-events:none; transition:opacity .24s ease,transform .42s ease; }
-    .is-active .card-tab { opacity:0; transform:translateY(-12px); }
-    .is-active .card-content { opacity:1; transform:none; pointer-events:auto; transition-delay:.15s; }
-    .card-index { position:absolute; top:-11px; right:-2px; margin:0; color:rgba(255,255,255,.9); font-size:clamp(78px,24vw,116px); font-weight:250; line-height:1; letter-spacing:-.08em; }
-    .card-title { position:relative; max-width:58%; margin:2px 0 14px; font-size:clamp(30px,8vw,38px); font-weight:650; line-height:1; letter-spacing:-.035em; }
-    .ai-badge { position:relative; align-self:flex-start; margin:0 0 9px; padding:5px 8px; border:1px solid rgba(255,255,255,.42); border-radius:999px; background:rgba(255,255,255,.13); font-size:8px; font-weight:850; letter-spacing:.12em; }
-    .card-copy { max-width:230px; margin:0; font-size:16px; line-height:1.42; }
-    .stats { display:flex; gap:28px; margin-top:36px; }
-    .stat strong,.stat small { display:block; }
-    .stat strong { font-size:20px; line-height:1.1; }
-    .stat small { margin-top:4px; color:rgba(255,255,255,.68); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
-    .card-actions { display:flex; align-items:center; justify-content:flex-end; width:100%; margin-top:auto; }
-    .explore { display:none; align-items:center; gap:8px; min-height:44px; padding:0 15px; border:1px solid rgba(255,255,255,.38); border-radius:999px; color:white; background:rgba(28,18,14,.16); backdrop-filter:blur(8px); cursor:pointer; }
-    .explore:hover { background:rgba(255,255,255,.18); }
-    .explore span { font-size:13px; font-weight:750; }
-    .trip-composer { width:58px; height:58px; display:flex; align-items:center; justify-content:flex-end; overflow:hidden; border-radius:999px; background:white; box-shadow:0 12px 26px rgba(35,24,20,.2); transition:width .48s cubic-bezier(.2,.75,.2,1); }
-    .trip-composer.is-open { width:100%; }
-    .add-trip { position:relative; flex:0 0 58px; width:58px; height:58px; display:grid; place-items:center; border:0; border-radius:50%; color:#2b5ed7; background:white; cursor:pointer; transition:transform .3s ease; }
-    .add-trip::before,.add-trip::after { content:""; position:absolute; width:20px; height:2px; background:currentColor; }
-    .add-trip::after { transform:rotate(90deg); }
-    .add-trip:hover { transform:translateY(-2px); }
-    .add-trip:active { transform:scale(.96); }
-    .is-open .add-trip { flex-basis:46px; width:46px; transform:rotate(45deg); }
-    .query-input { min-width:0; flex:1; width:0; height:44px; padding:0 4px; border:0; outline:0; color:#34302d; background:transparent; font-size:13px; opacity:0; transition:opacity .2s ease .16s; }
-    .query-input::placeholder { color:#8c8985; }
-    .is-open .query-input { opacity:1; }
-    .send-trip { flex:0 0 0; width:0; height:42px; overflow:hidden; padding:0; border:0; border-radius:50%; color:white; background:#2b5ed7; font-size:18px; font-weight:800; opacity:0; cursor:pointer; transform:scale(.7); transition:flex-basis .3s ease,width .3s ease,opacity .2s ease,transform .3s ease; }
-    .is-open .send-trip { flex-basis:42px; width:42px; margin-right:8px; opacity:1; transform:scale(1); }
-    .send-trip:disabled { color:transparent; opacity:.7; }
-    .send-trip:disabled::after { content:""; display:block; width:14px; height:14px; margin:auto; border:2px solid rgba(255,255,255,.45); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .hint { display:none; }
-    .toast { position:fixed; z-index:100; left:50%; bottom:max(20px,env(safe-area-inset-bottom)); translate:-50% 20px; width:max-content; max-width:calc(100vw - 40px); padding:12px 16px; border-radius:12px; color:white; background:#29231f; box-shadow:0 12px 30px rgba(0,0,0,.25); font-size:13px; opacity:0; pointer-events:none; transition:.25s ease; }
-    .toast.show { opacity:1; translate:-50% 0; }
-    @media (max-height:720px) { .masthead{height:138px;padding-top:22px}.deck{height:calc(100% - 138px)}.card-content{inset-block-start:28px}.stats{margin-top:22px}.hint{display:none} }
-    @media (min-width:700px) { body{padding:30px}.phone{height:min(calc(100dvh - 60px),880px)} }
-    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important} }
+    :root {
+      color-scheme: light;
+      font-family: "Noto Serif SC","Songti SC","SimSun",serif;
+      --ink:#262521;
+      --muted:#8d887f;
+      --green:#2d7056;
+      --paper:#f8f4e9;
+      --canvas:#eee9de;
+      --shadow:rgba(58,46,31,.2);
+    }
+    * { box-sizing:border-box; }
+    html { min-height:100%; overflow-y:auto; background:var(--canvas); }
+    body {
+      min-height:100%; margin:0; color:var(--ink); overflow-x:hidden; overflow-y:auto; overscroll-behavior-y:auto; -webkit-overflow-scrolling:touch;
+      background:
+        radial-gradient(circle at 16% 7%,rgba(255,255,255,.78),transparent 28rem),
+        radial-gradient(circle at 90% 76%,rgba(121,93,53,.08),transparent 34rem),
+        repeating-linear-gradient(8deg,rgba(82,65,43,.018) 0,rgba(82,65,43,.018) 1px,transparent 1px,transparent 7px),
+        var(--canvas);
+    }
+    button,input { font:inherit; }
+    button { color:inherit; }
+    .app { width:min(100%,1000px); min-height:100vh; margin:auto; padding:30px 26px 70px; }
+    .topbar { position:relative; z-index:50; display:grid; grid-template-columns:64px 1fr 104px; align-items:center; min-height:150px; }
+    .brand { text-align:center; }
+    .brand h1 { margin:0; font-size:clamp(30px,4.3vw,43px); font-weight:500; letter-spacing:.13em; }
+    .brand p { margin:12px 0 0; color:#9b9389; font-size:clamp(14px,2vw,20px); letter-spacing:.16em; }
+    .brand p::before { content:"❧"; margin-right:10px; color:#aaa399; }
+    .icon-button { width:48px; height:48px; display:grid; place-items:center; padding:0; border:0; background:transparent; cursor:pointer; }
+    .menu-icon,.menu-icon::before,.menu-icon::after { width:31px; height:2px; display:block; background:#1f1f1c; content:""; transition:.22s ease; }
+    .menu-icon { position:relative; }
+    .menu-icon::before { position:absolute; top:-10px; }
+    .menu-icon::after { position:absolute; top:10px; }
+    .top-actions { display:flex; align-items:center; justify-content:flex-end; gap:5px; }
+    .search-button { border-radius:50%; transition:background .2s ease,transform .2s ease; }
+    .search-button:hover { background:rgba(157,132,96,.1); transform:translateY(-1px); }
+    .search-icon { width:31px; height:31px; overflow:visible; fill:none; stroke:#37332d; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; }
+    .profile { position:relative; width:48px; height:48px; display:grid; place-items:center; overflow:hidden; padding:0; border:2px solid #38352f; border-radius:50%; background:#d8c4a6; cursor:pointer; }
+    .profile img { width:100%; height:100%; display:block; object-fit:cover; }
+    .profile img[hidden] { display:none; }
+    .profile-fallback { font-family:ui-sans-serif,"Segoe UI",sans-serif; font-size:13px; font-weight:800; letter-spacing:.04em; }
+    .profile input { position:absolute; width:1px; height:1px; opacity:0; }
+
+    .menu-panel,.search-panel { position:absolute; top:110px; z-index:80; padding:16px; border:1px solid rgba(95,79,57,.17); border-radius:14px; background:rgba(249,246,238,.97); box-shadow:0 16px 40px var(--shadow); opacity:0; transform:translateY(-8px); pointer-events:none; transition:.2s ease; }
+    .menu-panel { left:0; width:230px; }
+    .menu-panel button { width:100%; padding:11px 12px; border:0; border-radius:9px; background:transparent; text-align:left; cursor:pointer; }
+    .menu-panel button:hover { background:#eee5d4; }
+    .search-panel { right:55px; display:flex; gap:8px; }
+    .search-panel input { width:210px; padding:10px 13px; border:1px solid #cfc4b2; border-radius:9px; outline:none; background:white; }
+    .menu-panel.open,.search-panel.open { opacity:1; transform:none; pointer-events:auto; }
+
+    .journal-stage { position:relative; margin-top:18px; }
+    .record-nav { position:absolute; top:60px; z-index:30; display:flex; align-items:center; gap:8px; padding:8px 0; border:0; background:transparent; font-size:15px; letter-spacing:.11em; cursor:pointer; }
+    .record-nav:hover { color:var(--green); }
+    .record-nav.prev { left:0; }
+    .record-nav.next { right:0; }
+    .book { position:relative; width:min(650px,calc(100% - 250px)); min-height:1260px; margin:auto; }
+    .book::before,.book::after { content:""; position:absolute; inset:6px -8px -7px 7px; border:1px solid rgba(89,71,48,.14); border-radius:5px; background:#eae1cf; box-shadow:7px 8px 16px rgba(58,45,28,.13); transform:rotate(.35deg); }
+    .book::after { inset:12px -14px -12px 13px; z-index:-1; background:#ddd2be; transform:rotate(.65deg); }
+    .paper { position:relative; z-index:5; min-height:1260px; padding:62px 82px 58px; border:1px solid rgba(101,82,56,.16); border-radius:4px; background-color:var(--paper); background-image:radial-gradient(circle at 20% 8%,rgba(255,255,255,.6),transparent 35%),radial-gradient(circle at 88% 85%,rgba(126,94,47,.06),transparent 34%),repeating-linear-gradient(5deg,rgba(77,62,41,.018) 0,rgba(77,62,41,.018) 1px,transparent 1px,transparent 6px); box-shadow:0 12px 32px rgba(67,52,33,.18),inset 0 0 36px rgba(105,78,38,.04); transition:opacity .16s ease,transform .2s ease; }
+    .paper.changing { opacity:.2; transform:translateY(8px); }
+    .entry-date { margin:0 0 28px; color:var(--green); font-size:17px; font-weight:650; letter-spacing:.05em; }
+    .entry-title { margin:0; font-size:clamp(31px,4.7vw,48px); font-weight:600; line-height:1.25; letter-spacing:.035em; }
+    .entry-kicker { margin:12px 0 27px; color:#969087; font-size:18px; letter-spacing:.08em; }
+    .entry-intro { margin:0 0 27px; font-size:15px; line-height:1.95; letter-spacing:.05em; }
+    .section { padding:23px 0; border-top:1px solid rgba(45,112,86,.48); }
+    .section + .section { border-top:1px dashed rgba(75,70,61,.26); }
+    .section h3 { margin:0 0 13px; color:var(--green); font-size:21px; font-weight:600; letter-spacing:.08em; }
+    .section ul { margin:0; padding-left:20px; }
+    .section li,.section p { margin:7px 0; font-size:14px; line-height:1.72; letter-spacing:.045em; }
+    .route-row { display:grid; grid-template-columns:28px 1fr; gap:10px; align-items:start; }
+    .route-row span:first-child { font-family:ui-sans-serif,sans-serif; font-size:18px; text-align:center; }
+    .quote { margin:18px 0 0; padding:17px 22px; border-radius:9px; color:var(--green); background:rgba(106,143,108,.1); font-size:15px; line-height:1.8; text-align:center; letter-spacing:.06em; }
+    .quote::before,.quote::after { content:'“'; margin:0 10px; font-size:27px; font-weight:800; vertical-align:-4px; }
+    .quote::after { content:'”'; }
+
+    .tab-rail { position:absolute; top:190px; bottom:90px; z-index:20; width:118px; display:flex; flex-direction:column; justify-content:space-around; pointer-events:none; }
+    .tab-rail.left { right:calc(50% + 315px); align-items:flex-end; }
+    .tab-rail.right { left:calc(50% + 315px); align-items:flex-start; }
+    .city-tab { --tab:#ead0af; min-width:112px; max-width:118px; min-height:72px; padding:12px 15px; border:0; border-radius:10px 4px 4px 10px; color:#2d2a25; background:var(--tab); box-shadow:0 7px 13px rgba(68,52,33,.16); font-size:19px; line-height:1.35; letter-spacing:.08em; cursor:pointer; pointer-events:auto; transition:transform .2s ease,filter .2s ease,box-shadow .2s ease; }
+    .right .city-tab { border-radius:4px 10px 10px 4px; }
+    .city-tab:hover { filter:saturate(1.08); transform:translateX(-5px); box-shadow:0 10px 18px rgba(68,52,33,.2); }
+    .right .city-tab:hover { transform:translateX(5px); }
+    .city-tab.active { color:var(--green); outline:2px solid rgba(45,112,86,.34); outline-offset:-5px; font-weight:700; }
+    .position-dots { display:flex; justify-content:center; gap:6px; margin:18px 0 0; }
+    .position-dots span { width:5px; height:5px; border-radius:50%; background:#c5bba9; }
+    .position-dots span.active { width:19px; border-radius:9px; background:var(--green); }
+
+    .ai-dock { position:fixed; z-index:100; right:max(18px,calc(50vw - 470px)); bottom:max(22px,env(safe-area-inset-bottom)); }
+    .ai-response { position:absolute; right:0; bottom:78px; width:min(360px,calc(100vw - 36px)); padding:15px 17px; border:1px solid rgba(91,72,47,.18); border-radius:15px 15px 4px 15px; color:#38332c; background:rgba(249,245,234,.98); box-shadow:0 15px 36px rgba(48,37,25,.22); font-family:ui-sans-serif,"PingFang SC",sans-serif; font-size:13px; line-height:1.65; opacity:0; transform:translateY(8px); pointer-events:none; transition:.2s ease; }
+    .ai-response.show { opacity:1; transform:none; pointer-events:auto; }
+    .ai-response strong { display:block; margin-bottom:4px; color:#ba9873; font-size:11px; letter-spacing:.11em; }
+    .ai-response p { margin:5px 0 0; }
+    .ai-response em { color:#7f6a52; font-style:normal; font-weight:700; }
+    .ai-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .ai-action { min-height:38px; padding:8px 13px; border:1px solid #cdbda7; border-radius:999px; color:#5f5142; background:#f7f0e4; font-family:ui-sans-serif,"PingFang SC",sans-serif; font-size:12px; font-weight:700; cursor:pointer; touch-action:manipulation; }
+    .ai-action:hover { background:#eee2d1; }
+    .ai-action.primary { border-color:#a67f59; color:white; background:#a67f59; }
+    .ai-composer { width:64px; height:64px; display:flex; align-items:center; overflow:hidden; border:1px solid rgba(255,255,255,.82); border-radius:999px; background:#ba9873; box-shadow:0 13px 30px rgba(48,38,25,.25); transition:width .42s cubic-bezier(.2,.75,.2,1),background .2s ease; }
+    .ai-composer.open { width:min(360px,calc(100vw - 36px)); background:#faf7ef; }
+    .ai-toggle { position:relative; flex:0 0 64px; width:64px; height:64px; padding:0; border:2px solid white; border-radius:50%; color:white; background:transparent; cursor:pointer; touch-action:manipulation; transition:transform .25s ease,color .2s ease,border-color .2s ease; }
+    .ai-toggle::before,.ai-toggle::after { content:""; position:absolute; left:50%; top:50%; width:20px; height:2px; background:currentColor; transform:translate(-50%,-50%); }
+    .ai-toggle::after { transform:translate(-50%,-50%) rotate(90deg); }
+    .ai-composer.open .ai-toggle { color:white; border-color:white; background:#ba9873; transform:rotate(45deg); }
+    .ai-input { min-width:0; flex:1; width:0; height:44px; padding:0 7px 0 0; border:0; outline:0; color:#302d28; background:transparent; font-family:ui-sans-serif,"PingFang SC",sans-serif; font-size:13px; opacity:0; transition:opacity .18s ease .12s; }
+    .ai-composer.open .ai-input { opacity:1; }
+    .ai-send { flex:0 0 42px; width:42px; height:42px; margin-right:8px; padding:0; border:0; border-radius:50%; color:white; background:#a67f59; font-family:ui-sans-serif,sans-serif; font-size:18px; cursor:pointer; opacity:0; transform:scale(.65); transition:.22s ease; }
+    .ai-composer.open .ai-send { opacity:1; transform:scale(1); }
+    .ai-send:disabled { opacity:.55; }
+
+    @media (max-width:820px) {
+      .app { min-height:auto; padding:18px 8px max(220px,calc(env(safe-area-inset-bottom) + 180px)); }
+      .topbar { grid-template-columns:50px 1fr 94px; min-height:135px; }
+      .brand h1 { font-size:29px; }
+      .brand p { font-size:13px; }
+      .journal-stage { min-height:0; padding-top:50px; padding-bottom:80px; }
+      .record-nav { top:0; font-size:13px; }
+      .book { width:calc(100% - 128px); min-height:100dvh; }
+      .paper { min-height:100dvh; height:auto; padding:48px 30px 88px; }
+      .tab-rail { top:150px; bottom:90px; width:64px; }
+      .tab-rail.left { right:calc(50% + (50% - 64px)); }
+      .tab-rail.right { left:calc(50% + (50% - 64px)); }
+      .city-tab { min-width:64px; max-width:64px; min-height:64px; padding:9px 6px; border-radius:10px 3px 3px 10px; font-size:14px; writing-mode:vertical-rl; touch-action:manipulation; }
+      .right .city-tab { border-radius:3px 9px 9px 3px; }
+      .entry-title { font-size:30px; }
+      .entry-intro { font-size:14px; }
+      .section h3 { font-size:19px; }
+      .search-panel { right:0; }
+      .ai-dock { right:max(16px,env(safe-area-inset-right)); bottom:max(22px,env(safe-area-inset-bottom)); }
+    }
+    @media (max-width:470px) {
+      .topbar { grid-template-columns:44px 1fr 82px; }
+      .icon-button { width:40px; }
+      .profile { width:40px; height:40px; }
+      .brand h1 { font-size:24px; }
+      .brand p { font-size:11px; letter-spacing:.08em; }
+      .paper { padding:42px 22px; }
+      .entry-title { font-size:26px; }
+      .entry-kicker { font-size:15px; }
+      .section li,.section p { font-size:13px; }
+    }
+    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition-duration:.01ms!important; } }
   </style>
 </head>
 <body>
-  <main class="phone" aria-label="日本旅行日记卡片演示"><section class="journal">
-    <header class="masthead"><p class="eyebrow">My travel journal</p><h1>Japan<br>Diaries.</h1><div class="stamp" aria-hidden="true"></div></header>
-    <section class="deck" aria-label="旅行目的地卡片">
-      <article class="trip-card" tabindex="0" role="button" aria-label="展开北海道卡片" style="--accent:#bd5236;--accent-rgb:189,82,54;--photo:url('assets/hokkaido.svg')">
-        <div class="card-tab"><img class="avatar" alt="" src="assets/hokkaido.svg"><span class="tag">Hokkaido</span></div>
-        <div class="card-content"><span class="card-index" aria-hidden="true">01</span><h2 class="card-title">Hokkaido</h2><p class="card-copy">Snow-soft mornings, volcanic lakes and the quiet edge of northern Japan.</p><div class="stats"><div class="stat"><strong>43.1N</strong><small>Lat</small></div><div class="stat"><strong>1.2K</strong><small>Km / trip</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
-      </article>
-      <article class="trip-card is-active" tabindex="0" role="button" aria-label="当前展开：京都" style="--accent:#0c8f91;--accent-rgb:12,143,145;--photo:url('assets/kyoto.svg')">
-        <div class="card-tab"><img class="avatar" alt="" src="assets/kyoto.svg"><span class="tag">Kyoto</span></div>
-        <div class="card-content"><span class="card-index" aria-hidden="true">02</span><h2 class="card-title">Kyoto</h2><p class="card-copy">A study in patience. Architectural poetry meeting the maple-lined paths of the Higashiyama.</p><div class="stats"><div class="stat"><strong>35.0N</strong><small>Lat</small></div><div class="stat"><strong>18.4K</strong><small>Steps / day</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
-      </article>
-      <article class="trip-card" tabindex="0" role="button" aria-label="展开直岛卡片" style="--accent:#bf5800;--accent-rgb:191,88,0;--photo:url('assets/naoshima.svg')">
-        <div class="card-tab"><img class="avatar" alt="" src="assets/naoshima.svg"><span class="tag">Naoshima</span></div>
-        <div class="card-content"><span class="card-index" aria-hidden="true">03</span><h2 class="card-title">Naoshima</h2><p class="card-copy">Art, architecture and island air — a surreal gallery scattered beside the Seto Inland Sea.</p><div class="stats"><div class="stat"><strong>34.5N</strong><small>Lat</small></div><div class="stat"><strong>14</strong><small>Art stops</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
-      </article>
-      <article class="trip-card" tabindex="0" role="button" aria-label="展开东京卡片" style="--accent:#854963;--accent-rgb:133,73,99;--photo:url('assets/tokyo.svg')">
-        <div class="card-tab"><img class="avatar" alt="" src="assets/tokyo.svg"><span class="tag">Tokyo</span></div>
-        <div class="card-content"><span class="card-index" aria-hidden="true">04</span><h2 class="card-title">Tokyo</h2><p class="card-copy">The hyper-density experiment. 37 million souls moving in a coordinated grid of neon and steel.</p><div class="stats"><div class="stat"><strong>35.6N</strong><small>Lat</small></div><div class="stat"><strong>2.3K</strong><small>Steps / h</small></div></div><div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="想去哪里？" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div></div>
-      </article>
-      <span class="hint" aria-hidden="true">点击卡片或使用 ← → 切换</span>
+  <main class="app">
+    <header class="topbar">
+      <button class="icon-button" id="menuButton" aria-label="打开菜单" aria-expanded="false"><span class="menu-icon"></span></button>
+      <div class="brand"><h1>世界那么大</h1><p>旅行规划与沿途记录</p></div>
+      <div class="top-actions">
+        <button class="icon-button search-button" id="searchButton" aria-label="搜索城市" aria-expanded="false"><svg class="search-icon" viewBox="0 0 28 28" aria-hidden="true"><circle cx="12" cy="12" r="7.5"></circle><path d="m17.5 17.5 6 6"></path><path d="M9.4 8.8c1.5-1.2 3.9-1.3 5.5-.2" opacity=".38"></path></svg></button>
+        <label class="profile" aria-label="更换用户头像"><span class="profile-fallback" id="profileFallback">ME</span><img id="profilePhoto" alt="用户头像" hidden><input id="profileUpload" type="file" accept="image/*"></label>
+      </div>
+      <nav class="menu-panel" id="menuPanel" aria-label="主菜单"><button>旅行手账</button><button>收藏地点</button><button>个人偏好</button></nav>
+      <form class="search-panel" id="searchPanel"><input id="searchInput" aria-label="输入城市名称" placeholder="搜索城市…"></form>
+    </header>
+
+    <section class="journal-stage" aria-label="旅行手账">
+      <button class="record-nav prev" id="previousButton" aria-label="查看更早的记录">← 更早的记录</button>
+      <button class="record-nav next" id="nextButton" aria-label="查看更新的记录">更新的记录 →</button>
+      <div class="tab-rail left" id="leftTabs" aria-label="较早目的地"></div>
+      <div class="tab-rail right" id="rightTabs" aria-label="较新目的地"></div>
+      <div class="book">
+        <article class="paper" id="paper" aria-live="polite">
+          <p class="entry-date" id="entryDate"></p>
+          <h2 class="entry-title" id="entryTitle"></h2>
+          <p class="entry-kicker" id="entryKicker"></p>
+          <p class="entry-intro" id="entryIntro"></p>
+          <section class="section"><h3>I. 行程概览</h3><ul id="overviewList"></ul></section>
+          <section class="section"><h3>II. 必去清单</h3><ul id="highlightList"></ul></section>
+          <section class="section"><h3>III. 路线与交通</h3><div id="routeList"></div></section>
+          <section class="section"><h3>IV. 美食计划</h3><div id="foodList"></div></section>
+          <section class="section"><h3>V. 行李与准备</h3><p id="packingText"></p><blockquote class="quote" id="quoteText"></blockquote></section>
+          <div class="position-dots" id="positionDots" aria-hidden="true"></div>
+        </article>
+      </div>
     </section>
-  </section></main>
-  <div class="toast" role="status" aria-live="polite"></div>
+  </main>
+  <aside class="ai-dock" aria-label="AI 旅行助手">
+    <div class="ai-response" id="aiResponse" role="status" aria-live="polite"></div>
+    <form class="ai-composer" id="aiComposer">
+      <button class="ai-toggle" id="aiToggle" type="button" aria-label="打开 AI 对话" aria-expanded="false"></button>
+      <input class="ai-input" id="aiInput" maxlength="160" aria-label="向 AI 提问" placeholder="问问这次旅行…">
+      <button class="ai-send" id="aiSend" type="submit" aria-label="发送问题">↑</button>
+    </form>
+  </aside>
+
   <script>
-    const deck = document.querySelector('.deck');
-    const hint = document.querySelector('.hint');
-    const toast = document.querySelector('.toast');
-    let cards = [...document.querySelectorAll('.trip-card')];
-    let active = cards.findIndex(card => card.classList.contains('is-active'));
-    let touchStartX = null;
-    let toastTimer;
-    let composerOpen = null;
-
-    const generatedStyles = [
-      { accent:'#315c69', rgb:'49,92,105', photo:'assets/hokkaido.svg' },
-      { accent:'#6f5445', rgb:'111,84,69', photo:'assets/kyoto.svg' },
-      { accent:'#79524f', rgb:'121,82,79', photo:'assets/tokyo.svg' },
-      { accent:'#8e5d19', rgb:'142,93,25', photo:'assets/naoshima.svg' }
+    const destinations = [
+      {city:'京都',color:'#ead0af',date:'2024年5月18日',title:'初夏の京都5日行程计划',kicker:'慢茶、古寺、町家与山间小路',intro:'这是我期待已久的京都之旅。想在初夏的微风里，走进古老的街巷，喝一碗抹茶，听一场雨落在屋檐上。以下是这趟旅程的计划与准备，记录出发前的每一个细节。',overview:['Day 1｜抵达京都 · 祇园散步 · 花见小路 · 鸭川夜景','Day 2｜清水寺 · 二年坂三年坂 · 伏见稻荷大社','Day 3｜岚山竹林 · 嵯峨野小火车 · 天龙寺','Day 4｜哲学之道 · 银阁寺 · 南禅寺 · 蹴上倾斜铁道','Day 5｜锦市场 · 平安神宫 · 返程'],highlights:['清水寺：清晨前往，避开人潮，感受山寺的宁静。','伏见稻荷大社：走到千本鸟居尽头，俯瞰整个京都。','岚山竹林小径：光影斑驳，记得带上广角镜头。','锦市场：体验在地美食与手信，推荐玉子烧与抹茶甜点。'],routes:['🚆|机场 → 京都站：HARUKA 特急约 75 分钟直达。','▣|市内交通：购买巴士一日券，主要景点基本覆盖。','⌁|步行为主：许多小巷与寺院之间，步行最能感受京都。'],food:['上午：茶屋抹茶、和果子','午餐：汤豆腐、荞麦面、鳗鱼饭','晚餐：怀石料理或居酒屋小酌','推荐：% Arabica、茶寮宝泉、顺正汤豆腐'],packing:'轻便为主，舒适的鞋子与雨具必备。相机、充电器、转换插头、交通卡（ICOCA）。5月天气多变，薄外套与晴雨两用伞放进行李侧袋。',quote:'旅行的意义，不只是到达一个地方，而是在路上，遇见更好的自己。'},
+      {city:'伊斯坦布尔',color:'#dbe4b2',title:'横跨欧亚的海峡漫游',kicker:'清真寺、香料市场与博斯普鲁斯海风'},
+      {city:'清迈',color:'#d9d3e7',title:'清迈慢生活四日记',kicker:'古城晨光、山寺与热带夜市'},
+      {city:'阿那亚',color:'#edc9cc',title:'海边社区周末散步',kicker:'礼堂、孤独图书馆与落日晚风'},
+      {city:'冰岛',color:'#cbd1e8',title:'冰岛环岛追光计划',kicker:'瀑布、黑沙滩与极光公路'},
+      {city:'大理',color:'#c9ddcf',title:'苍山洱海之间的日子',kicker:'古城、骑行与白族村落'},
+      {city:'奈良',color:'#e9d2b5',title:'奈良一日古都散策',kicker:'小鹿、古寺与若草山'},
+      {city:'巴黎',color:'#ecd0a9',title:'巴黎左岸艺术路线',kicker:'旧书店、博物馆与塞纳河黄昏'},
+      {city:'新疆',color:'#dce7ad',title:'北疆公路风景计划',kicker:'草原、雪山与湖泊长线'},
+      {city:'哥本哈根',color:'#d8d1e5',title:'北欧设计城市周末',kicker:'港口彩屋、设计馆与骑行'},
+      {city:'里斯本',color:'#efc8cc',title:'里斯本山城电车记',kicker:'花砖、坡道与大西洋日落'},
+      {city:'东京',color:'#cbd2e9',title:'东京街区观察日记',kicker:'喫茶店、建筑与夜间霓虹'},
+      {city:'摩洛哥',color:'#c9ded3',title:'摩洛哥色彩公路',kicker:'古城、沙漠与蓝色小镇'},
+      {city:'布达佩斯',color:'#ead3b8',title:'多瑙河两岸三日行',kicker:'温泉、城堡与夜色中的桥'}
     ];
+    const fallback = {
+      date:'2025年旅行手账',
+      intro:'把目的地拆成可以慢慢体验的日常：留出步行、偶遇与发呆的时间，也为最想看的风景保留最好的光线。',
+      overview:['Day 1｜抵达 · 入住 · 老城散步','Day 2｜地标建筑 · 当地市场 · 夜景','Day 3｜近郊自然 · 社区餐厅 · 自由探索','Day 4｜博物馆 · 咖啡馆 · 返程'],
+      highlights:['从城市最具代表性的街区开始，先建立方向感。','把热门景点安排在清晨或傍晚，避开人流。','至少留半天不排计划，让旅程自然发生。','选择一家当地市场，认识真正的日常味道。'],
+      routes:['✈|抵达：优先选择公共交通进入市中心。','▣|市内：步行结合地铁，减少往返折线。','⌁|节奏：每天只安排一个重点区域。'],
+      food:['早餐：本地面包与咖啡','午餐：市场或街区小馆','晚餐：提前预订一家代表性餐厅','随身：水、坚果与当地水果'],
+      packing:'轻装、舒适步行鞋、薄外套、充电设备和可重复使用的水瓶。提前下载离线地图，并保存住宿与交通信息。',
+      quote:'好旅程不是打卡更多，而是记住更多。'
+    };
+    const initialDestinationCount = destinations.length;
+    let active = 0;
+    let pendingAIAction = null;
+    let touchStartX = null;
+    const $ = selector => document.querySelector(selector);
+    const paper = $('#paper');
 
-    function layoutCards() {
-      const width = deck.clientWidth;
-      const handle = Math.max(14, Math.min(42, (width - 215) / Math.max(cards.length - 1, 1)));
-      const rightHandle = Math.max(14, Math.min(32, handle * .78));
-      const activeLeft = active * handle;
-      const rightCount = cards.length - active - 1;
-      const activeRight = composerOpen ? 0 : rightCount * rightHandle;
-
-      cards.forEach((card, index) => {
-        let left;
-        let cardWidth;
-        if (index < active) {
-          left = index * handle;
-          cardWidth = width - left;
-        } else if (index === active) {
-          left = activeLeft;
-          cardWidth = width - activeLeft - activeRight;
+    function dataFor(index) { return {...fallback,...destinations[index]}; }
+    function renderTabs() {
+      const left = $('#leftTabs');
+      const right = $('#rightTabs');
+      left.innerHTML = '';
+      right.innerHTML = '';
+      const midpoint = Math.ceil(initialDestinationCount / 2);
+      const leftIndexes = Array.from({length:midpoint},(_,index) => index);
+      const originalRightIndexes = Array.from({length:initialDestinationCount - midpoint},(_,index) => midpoint + index);
+      const newIndexes = Array.from({length:destinations.length - initialDestinationCount},(_,index) => initialDestinationCount + index).reverse();
+      function appendTab(index,rail) {
+        const item = destinations[index];
+        const button = document.createElement('button');
+        button.className = `city-tab${index === active ? ' active' : ''}`;
+        button.type = 'button';
+        button.textContent = item.city;
+        button.style.setProperty('--tab',item.color);
+        button.setAttribute('aria-label',`打开${item.city}旅行记录`);
+        button.setAttribute('aria-pressed',String(index === active));
+        button.addEventListener('click',() => select(index));
+        rail.appendChild(button);
+      }
+      leftIndexes.forEach(index => appendTab(index,left));
+      [...newIndexes,...originalRightIndexes].forEach(index => appendTab(index,right));
+    }
+    function fillList(selector,items) { $(selector).innerHTML = items.map(item => `<li>${item}</li>`).join(''); }
+    function renderEntry() {
+      const data = dataFor(active);
+      $('#entryDate').textContent = data.date;
+      $('#entryTitle').textContent = data.title;
+      $('#entryKicker').textContent = data.kicker;
+      $('#entryIntro').textContent = data.intro;
+      fillList('#overviewList',data.overview);
+      fillList('#highlightList',data.highlights);
+      $('#routeList').innerHTML = data.routes.map(row => { const [icon,text] = row.split('|'); return `<p class="route-row"><span>${icon}</span><span>${text}</span></p>`; }).join('');
+      $('#foodList').innerHTML = data.food.map(item => `<p>• ${item}</p>`).join('');
+      $('#packingText').textContent = data.packing;
+      $('#quoteText').textContent = data.quote;
+      $('#positionDots').innerHTML = destinations.map((_,index) => `<span class="${index === active ? 'active' : ''}"></span>`).join('');
+      renderTabs();
+    }
+    function select(index) {
+      active = (index + destinations.length) % destinations.length;
+      paper.classList.add('changing');
+      setTimeout(() => { renderEntry(); paper.classList.remove('changing'); },140);
+    }
+    const knownPlaces = ['上海','北京','杭州','苏州','成都','重庆','西安','广州','深圳','厦门','青岛','长沙','武汉','南京','大阪','宇治','神户','箱根','富士山','北海道','冲绳','首尔','曼谷','新加坡','罗马','伦敦','纽约','悉尼','京都','奈良','巴黎','新疆','清迈','冰岛','大理','东京','里斯本','摩洛哥','布达佩斯','哥本哈根','伊斯坦布尔','阿那亚'];
+    const planColors = ['#e5cba7','#d8e4b5','#d9d3e7','#efcbd0','#cbd4e9','#c9ddd2'];
+    function escapeHTML(value) { return value.replace(/[&<>"']/g,char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+    function showAIResponse(content) {
+      $('#aiResponse').innerHTML = `<strong>AI TRAVEL ASSISTANT</strong>${content}`;
+      $('#aiResponse').classList.add('show');
+    }
+    function findDestination(query) {
+      const known = knownPlaces.find(place => query.includes(place));
+      if (known) return known;
+      const bare = query.trim();
+      if (/^[\u4e00-\u9fa5]{2,10}$/.test(bare) && !/修改|调整|推荐|哪里|怎么|行程|计划|旅行|增加|删除/.test(bare)) return bare;
+      const match = query.match(/(?:想去|准备去|计划去|前往|新增旅行计划|新建旅行计划|创建旅行计划)([\u4e00-\u9fa5]{2,10})/);
+      if (!match) return null;
+      const candidate = match[1].replace(/(?:玩|旅行|旅游|行程|计划|看看|五天|七天|一周).*$/,'');
+      return candidate.length >= 2 ? candidate : null;
+    }
+    function parseDuration(query) {
+      const match = query.match(/(\d{1,2})\s*(?:天|日)/);
+      if (match) return Math.max(1,Math.min(30,Number(match[1])));
+      if (/一周|七天/.test(query)) return 7;
+      if (/周末|两天|二天/.test(query)) return 2;
+      return null;
+    }
+    function buildOverview(city,duration,waypoint) {
+      const beats = city === '上海'
+        ? ['抵达上海 · 外滩散步 · 南京东路夜景','武康路 · 衡山路 · 徐汇老洋房','上海博物馆 · 人民广场 · 新天地','陆家嘴 · 浦东美术馆 · 黄浦江夜游','豫园 · 城隍庙 · 苏州河步道','朱家角水乡 · 当地晚餐 · 返回市区']
+        : [`抵达${city} · 入住 · 街区散步`,'城市地标 · 当地市场 · 夜景','博物馆 · 社区餐厅 · 自由探索','近郊自然 · 慢行路线 · 日落','特色街区 · 咖啡馆 · 手信','留白时间 · 补充体验 · 整理照片'];
+      return Array.from({length:duration},(_,index) => {
+        let detail = index === duration - 1 ? '自由活动 · 整理行李 · 返程' : beats[index % beats.length];
+        if (waypoint && index === Math.min(duration - 2,Math.max(1,Math.floor(duration / 2)))) detail = `途经${waypoint} · 核心景点 · 当地晚餐`;
+        return `Day ${index + 1}｜${detail}`;
+      });
+    }
+    function recommendationOptions(query) {
+      if (/冬|雪|春节|圣诞/.test(query)) return ['北海道','冰岛','新疆'];
+      if (/夏|暑|避暑/.test(query)) return ['大理','冰岛','新疆'];
+      if ((parseDuration(query) || 5) <= 3) return ['奈良','清迈','京都'];
+      return ['北海道','伊斯坦布尔','大理'];
+    }
+    function proposalForModify(query) {
+      const target = destinations[active];
+      const duration = parseDuration(query);
+      const waypoint = knownPlaces.find(place => place !== target.city && query.includes(place)) || null;
+      const changes = [];
+      if (duration) changes.push(`旅行周期调整为 ${duration} 天`);
+      if (waypoint) changes.push(`新增途经点：${waypoint}`);
+      if (!changes.length) changes.push(`按要求调整当前行程：“${escapeHTML(query)}”`);
+      return {type:'modify',targetIndex:active,duration,waypoint,query,summary:changes.join('；')};
+    }
+    function proposalForNew(city,query) {
+      const duration = parseDuration(query) || 5;
+      return {type:'create',city,duration,query,summary:`新建「${city}」${duration} 天旅行计划`};
+    }
+    function showConfirmation(action) {
+      pendingAIAction = action;
+      const targetName = action.type === 'modify' ? destinations[action.targetIndex].city : action.city;
+      showAIResponse(`<p>准备${action.type === 'modify' ? '修改当前记录' : '创建新记录'}：<em>${targetName}</em></p><p>${action.summary}</p><p>确认后才会写入页面。</p><div class="ai-actions"><button class="ai-action primary" type="button" data-ai-action="confirm">确认执行</button><button class="ai-action" type="button" data-ai-action="cancel">取消</button></div>`);
+    }
+    function classifyAIRequest(query) {
+      const wantsRecommendation = /去哪里|去哪|推荐|适合去|目的地/.test(query) && !findDestination(query);
+      const explicitNew = /(?:新增|新建|创建).{0,4}(?:旅行|行程|计划)|计划去|安排.{0,4}旅行|想去|准备去/.test(query);
+      const modifyCurrent = /当前|本页|这次|这个行程|修改|更改|调整|改成|延长|缩短|途[经径]点|增加|添加|删除/.test(query) && !/(?:新增|新建|创建).{0,4}(?:旅行|行程|计划)/.test(query);
+      const city = findDestination(query);
+      const bareDestination = city && query.trim() === city;
+      if (wantsRecommendation || (!city && explicitNew)) {
+        const options = recommendationOptions(query);
+        showAIResponse(`<p>根据你的时间和旅行诉求，推荐先考虑：</p><div class="ai-actions">${options.map(place => `<button class="ai-action" type="button" data-ai-action="choose" data-city="${place}">${place}</button>`).join('')}</div><p>选择目的地后，我会先展示新计划提案，再请你确认创建。</p>`);
+        return;
+      }
+      if (explicitNew || bareDestination || (city && /去|到|旅行|计划|安排/.test(query) && !modifyCurrent)) {
+        showConfirmation(proposalForNew(city || '新旅程',query));
+        return;
+      }
+      showConfirmation(proposalForModify(query));
+    }
+    function executePendingAIAction() {
+      if (!pendingAIAction) return;
+      const action = pendingAIAction;
+      pendingAIAction = null;
+      if (action.type === 'modify') {
+        const item = destinations[action.targetIndex];
+        const current = dataFor(action.targetIndex);
+        if (action.duration) {
+          item.title = `${item.city}${action.duration}日旅行计划`;
+          item.overview = buildOverview(item.city,action.duration,action.waypoint);
+        } else if (action.waypoint) {
+          item.overview = [...current.overview];
+          item.overview.splice(Math.max(1,item.overview.length - 1),0,`途经${action.waypoint} · 核心景点 · 当地体验`);
         } else {
-          left = width - (cards.length - index) * rightHandle;
-          cardWidth = width - left;
+          item.intro = `${current.intro} AI 调整记录：${action.query}`;
         }
-        card.style.setProperty('--left', `${left}px`);
-        card.style.setProperty('--width', `${cardWidth}px`);
-        card.style.zIndex = index < active ? index + 1 : cards.length - index;
-      });
+        if (action.waypoint && !item.kicker.includes(action.waypoint)) item.kicker = `${item.kicker} · 经${action.waypoint}`;
+        active = action.targetIndex;
+        renderEntry();
+        showAIResponse(`<p>已更新 <em>${item.city}</em> 的当前旅行记录。</p>`);
+        return;
+      }
+      const isShanghai = action.city === '上海';
+      const newItem = {city:action.city,color:planColors[destinations.length % planColors.length],date:'AI 新建旅行计划',title:action.city,kicker:isShanghai ? `${action.duration}日城市漫游 · 外滩、街区与江畔夜景` : `${action.duration}日旅行规划 · 由 AI 根据本次对话生成`,intro:`这是一份为${action.city}准备的${action.duration}天旅行计划。先以区域和节奏建立草案，之后可继续通过右下角 AI 对话调整途经点、天数与偏好。`,overview:buildOverview(action.city,action.duration),highlights:isShanghai ? ['外滩：建议清晨或蓝调时刻前往，避开高峰并欣赏万国建筑群。','武康路与衡山路：以步行为主，串联老洋房、梧桐街道与社区咖啡馆。','浦东美术馆与陆家嘴：预留半天，从城市天际线走到黄浦江夜景。','豫园与苏州河：分别体验传统城市肌理与更新后的滨水空间。'] : [...fallback.highlights],routes:isShanghai ? ['🚇|市内交通：地铁覆盖主要区域，使用交通码即可通行。','⛴|过江体验：可选择轮渡连接浦西与浦东，避开道路拥堵。','⌁|街区步行：武康路、外滩和苏州河适合分区域慢行。'] : [...fallback.routes],food:isShanghai ? ['早餐：生煎、小笼与咸豆浆','午餐：本帮菜、葱油拌面','晚餐：上海菜或江景餐厅','甜点：蝴蝶酥、排骨年糕与季节青团'] : [...fallback.food],packing:fallback.packing,quote:fallback.quote};
+      destinations.push(newItem);
+      active = destinations.length - 1;
+      renderEntry();
+      showAIResponse(`<p>已创建 <em>${action.city}</em> 的新旅行记录，并切换到新页面。</p>`);
     }
-
-    function selectCard(index, focus = false) {
-      closeComposer();
-      active = (index + cards.length) % cards.length;
-      cards.forEach((card, i) => {
-        const selected = i === active;
-        const title = card.querySelector('.card-title').textContent;
-        card.classList.toggle('is-active', selected);
-        card.setAttribute('aria-label', selected ? `当前展开：${title}` : `展开${title}卡片`);
-        card.setAttribute('aria-pressed', String(selected));
-      });
-      hint.style.opacity = '0';
-      layoutCards();
-      if (focus) cards[active].focus({ preventScroll:true });
-    }
-
-    function bindCard(card) {
-      card.addEventListener('click', event => {
-        if (event.target.closest('button,input,form')) return;
-        selectCard(cards.indexOf(card));
-      });
-      card.addEventListener('keydown', event => {
-        if (event.target.closest('input,button,form')) return;
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          selectCard(cards.indexOf(card));
-        }
-      });
-      bindComposer(card.querySelector('.trip-composer'));
-    }
-
-    function bindComposer(form) {
-      const toggle = form.querySelector('.add-trip');
-      const input = form.querySelector('.query-input');
-      const send = form.querySelector('.send-trip');
-
-      toggle.addEventListener('click', () => {
-        if (form.classList.contains('is-open')) {
-          closeComposer();
-          return;
-        }
-        closeComposer();
-        composerOpen = form;
-        form.classList.add('is-open');
-        toggle.setAttribute('aria-label', '关闭 AI 输入框');
-        layoutCards();
-        requestAnimationFrame(() => input.focus());
-      });
-
-      form.addEventListener('submit', event => {
-        event.preventDefault();
-        const query = input.value.trim();
-        if (!query) {
-          input.focus();
-          showToast('先告诉 AI 你想去哪里');
-          return;
-        }
-        send.disabled = true;
-        input.disabled = true;
-        setTimeout(() => {
-          createAICard(query);
-          input.value = '';
-          input.disabled = false;
-          send.disabled = false;
-        }, 650);
-      });
-    }
-
-    function closeComposer() {
-      if (!composerOpen) return;
-      composerOpen.classList.remove('is-open');
-      composerOpen.querySelector('.add-trip').setAttribute('aria-label', '打开 AI 输入框');
-      composerOpen = null;
-      layoutCards();
-    }
-
-    function inferDestination(query) {
-      const places = [
-        ['北海道','Hokkaido'],['京都','Kyoto'],['大阪','Osaka'],['东京','Tokyo'],['東京','Tokyo'],
-        ['冲绳','Okinawa'],['沖繩','Okinawa'],['奈良','Nara'],['镰仓','Kamakura'],['鎌倉','Kamakura'],
-        ['富士','Mt. Fuji'],['神户','Kobe'],['福冈','Fukuoka'],['札幌','Sapporo']
-      ];
-      return places.find(([key]) => query.includes(key))?.[1] || 'New Journey';
-    }
-
-    function escapeHTML(value) {
-      return value.replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-    }
-
-    function createAICard(query) {
-      const title = inferDestination(query);
-      const style = generatedStyles[(cards.length - 4) % generatedStyles.length];
-      const number = String(cards.length + 1).padStart(2, '0');
-      const safeQuery = escapeHTML(query.slice(0, 72));
-      const card = document.createElement('article');
-      card.className = 'trip-card is-entering';
-      card.tabIndex = 0;
-      card.setAttribute('role', 'button');
-      card.style.cssText = `--accent:${style.accent};--accent-rgb:${style.rgb};--photo:url('${style.photo}')`;
-      card.innerHTML = `
-        <div class="card-tab"><img class="avatar" alt="" src="${style.photo}"><span class="tag">${title}</span></div>
-        <div class="card-content">
-          <span class="card-index" aria-hidden="true">${number}</span>
-          <span class="ai-badge">AI RESPONSE</span>
-          <h2 class="card-title">${title}</h2>
-          <p class="card-copy">“${safeQuery}” — 我建议从城市漫步、当地风味和一段留白时间开始，形成轻松而可执行的旅行节奏。</p>
-          <div class="stats"><div class="stat"><strong>AI</strong><small>Curated</small></div><div class="stat"><strong>READY</strong><small>New plan</small></div></div>
-          <div class="card-actions"><form class="trip-composer" aria-label="向 AI 提问"><button class="add-trip" type="button" aria-label="打开 AI 输入框"></button><input class="query-input" type="text" maxlength="120" placeholder="继续问 AI…" aria-label="旅行问题"><button class="send-trip" type="submit" aria-label="发送问题">↑</button></form></div>
-        </div>`;
-
-      deck.insertBefore(card, hint);
-      cards.push(card);
-      bindCard(card);
-      composerOpen = null;
-      selectCard(cards.length - 1);
-      requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove('is-entering')));
-      showToast('AI 已生成一张新的旅行卡片');
-    }
-
-    cards.forEach(bindCard);
-    deck.addEventListener('touchstart', event => { touchStartX = event.changedTouches[0].clientX; }, { passive:true });
-    deck.addEventListener('touchend', event => {
-      if (touchStartX === null || composerOpen) return;
-      const delta = event.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(delta) > 48) selectCard(active + (delta < 0 ? 1 : -1));
-      touchStartX = null;
-    }, { passive:true });
-    document.addEventListener('keydown', event => {
+    $('#previousButton').addEventListener('click',() => select(active - 1));
+    $('#nextButton').addEventListener('click',() => select(active + 1));
+    document.addEventListener('keydown',event => {
       if (event.target.matches('input')) return;
-      if (event.key === 'ArrowRight') selectCard(active + 1, true);
-      if (event.key === 'ArrowLeft') selectCard(active - 1, true);
+      if (event.key === 'ArrowLeft') select(active - 1);
+      if (event.key === 'ArrowRight') select(active + 1);
     });
-    function showToast(message) {
-      clearTimeout(toastTimer);
-      toast.textContent = message;
-      toast.classList.add('show');
-      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    paper.addEventListener('touchstart',event => { touchStartX = event.changedTouches[0].clientX; },{passive:true});
+    paper.addEventListener('touchend',event => {
+      if (touchStartX === null) return;
+      const delta = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(delta) > 55) select(active + (delta < 0 ? 1 : -1));
+      touchStartX = null;
+    },{passive:true});
+    function togglePanel(button,panel) {
+      const open = !panel.classList.contains('open');
+      document.querySelectorAll('.menu-panel,.search-panel').forEach(item => item.classList.remove('open'));
+      document.querySelectorAll('[aria-expanded]').forEach(item => item.setAttribute('aria-expanded','false'));
+      panel.classList.toggle('open',open);
+      button.setAttribute('aria-expanded',String(open));
+      if (open && panel === $('#searchPanel')) $('#searchInput').focus();
     }
-    new ResizeObserver(layoutCards).observe(deck);
-    selectCard(active);
+    $('#menuButton').addEventListener('click',() => togglePanel($('#menuButton'),$('#menuPanel')));
+    $('#searchButton').addEventListener('click',() => togglePanel($('#searchButton'),$('#searchPanel')));
+    $('#searchPanel').addEventListener('submit',event => {
+      event.preventDefault();
+      const query = $('#searchInput').value.trim().toLowerCase();
+      const index = destinations.findIndex(item => item.city.toLowerCase().includes(query));
+      if (index >= 0) { select(index); $('#searchPanel').classList.remove('open'); $('#searchButton').setAttribute('aria-expanded','false'); }
+    });
+    function showProfilePhoto(source) {
+      $('#profilePhoto').src = source;
+      $('#profilePhoto').hidden = false;
+      $('#profileFallback').hidden = true;
+    }
+    $('#profileUpload').addEventListener('change',() => {
+      const file = $('#profileUpload').files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.addEventListener('load',() => { showProfilePhoto(reader.result); localStorage.setItem('travel-profile-photo',reader.result); });
+      reader.readAsDataURL(file);
+    });
+    const savedPhoto = localStorage.getItem('travel-profile-photo');
+    if (savedPhoto) showProfilePhoto(savedPhoto);
+    $('#aiToggle').addEventListener('click',() => {
+      const composer = $('#aiComposer');
+      const open = !composer.classList.contains('open');
+      composer.classList.toggle('open',open);
+      $('#aiToggle').setAttribute('aria-expanded',String(open));
+      $('#aiToggle').setAttribute('aria-label',open ? '关闭 AI 对话' : '打开 AI 对话');
+      if (open) requestAnimationFrame(() => $('#aiInput').focus());
+    });
+    $('#aiComposer').addEventListener('submit',event => {
+      event.preventDefault();
+      const query = $('#aiInput').value.trim();
+      if (!query) { $('#aiInput').focus(); return; }
+      const send = $('#aiSend');
+      send.disabled = true;
+      pendingAIAction = null;
+      showAIResponse('<p>正在识别你的旅行意图…</p>');
+      setTimeout(() => {
+        classifyAIRequest(query);
+        send.disabled = false;
+        $('#aiInput').value = '';
+      },520);
+    });
+    $('#aiResponse').addEventListener('click',event => {
+      const button = event.target.closest('[data-ai-action]');
+      if (!button) return;
+      const action = button.dataset.aiAction;
+      if (action === 'confirm') executePendingAIAction();
+      if (action === 'cancel') { pendingAIAction = null; showAIResponse('<p>已取消，本次没有修改任何旅行记录。</p>'); }
+      if (action === 'choose') showConfirmation(proposalForNew(button.dataset.city,'目的地推荐'));
+    });
+    renderEntry();
   </script>
 </body>
 </html>
