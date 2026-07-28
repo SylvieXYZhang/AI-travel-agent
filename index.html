@@ -85,6 +85,8 @@
     .tab-rail { position:absolute; top:190px; bottom:90px; z-index:20; width:118px; display:flex; flex-direction:column; justify-content:space-around; pointer-events:none; }
     .tab-rail.left { right:calc(50% + 315px); align-items:flex-end; }
     .tab-rail.right { left:calc(50% + 315px); align-items:flex-start; }
+    .tab-more { display:none; }
+    .tab-list { width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-around; align-items:inherit; }
     .city-tab { --tab:#ead0af; min-width:112px; max-width:118px; min-height:72px; padding:12px 15px; border:0; border-radius:10px 4px 4px 10px; color:#2d2a25; background:var(--tab); box-shadow:0 7px 13px rgba(68,52,33,.16); font-size:19px; line-height:1.35; letter-spacing:.08em; cursor:pointer; pointer-events:auto; transition:transform .2s ease,filter .2s ease,box-shadow .2s ease; }
     .right .city-tab { border-radius:4px 10px 10px 4px; }
     .city-tab:hover { filter:saturate(1.08); transform:translateX(-5px); box-shadow:0 10px 18px rgba(68,52,33,.2); }
@@ -95,15 +97,54 @@
     .position-dots span.active { width:19px; border-radius:9px; background:var(--green); }
 
     .ai-dock { position:fixed; z-index:100; right:max(18px,calc(50vw - 470px)); bottom:max(22px,env(safe-area-inset-bottom)); }
-    .ai-response { position:absolute; right:0; bottom:78px; width:min(360px,calc(100vw - 36px)); padding:15px 17px; border:1px solid rgba(91,72,47,.18); border-radius:15px 15px 4px 15px; color:#38332c; background:rgba(249,245,234,.98); box-shadow:0 15px 36px rgba(48,37,25,.22); font-family:ui-sans-serif,"PingFang SC",sans-serif; font-size:13px; line-height:1.65; opacity:0; transform:translateY(8px); pointer-events:none; transition:.2s ease; }
+    .ai-response { position:absolute; right:0; bottom:78px; width:min(360px,calc(100vw - 36px)); max-height:min(70dvh,640px); padding:15px 17px; overflow:auto; border:1px solid rgba(91,72,47,.18); border-radius:15px 15px 4px 15px; color:#38332c; background:rgba(249,245,234,.98); box-shadow:0 15px 36px rgba(48,37,25,.22); font-family:ui-sans-serif,"PingFang SC",sans-serif; font-size:13px; line-height:1.65; opacity:0; transform:translateY(8px); pointer-events:none; transition:.2s ease; }
     .ai-response.show { opacity:1; transform:none; pointer-events:auto; }
-    .ai-response strong { display:block; margin-bottom:4px; color:#ba9873; font-size:11px; letter-spacing:.11em; }
+    .ai-response-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px; }
+    .ai-response strong { color:#ba9873; font-size:11px; letter-spacing:.11em; }
+    .ai-response-close { width:28px; height:28px; flex:0 0 28px; display:grid; place-items:center; padding:0; border:1px solid #d7c9b7; border-radius:50%; color:#786652; background:#f5eee2; font-size:18px; line-height:1; cursor:pointer; }
+    .ai-response-close:hover { color:#4e4033; background:#eadfce; }
     .ai-response p { margin:5px 0 0; }
     .ai-response em { color:#7f6a52; font-style:normal; font-weight:700; }
     .ai-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
     .ai-action { min-height:38px; padding:8px 13px; border:1px solid #cdbda7; border-radius:999px; color:#5f5142; background:#f7f0e4; font-family:ui-sans-serif,"PingFang SC",sans-serif; font-size:12px; font-weight:700; cursor:pointer; touch-action:manipulation; }
     .ai-action:hover { background:#eee2d1; }
     .ai-action.primary { border-color:#a67f59; color:white; background:#a67f59; }
+    .ai-results { display:grid; gap:8px; margin-top:11px; }
+    .ai-result { padding:10px 11px; border-radius:10px; background:#f3ecdf; }
+    .ai-result b { display:block; color:#4f4438; }
+    .ai-result span { display:block; margin-top:3px; color:#746656; }
+    .ai-sources { margin-top:11px; padding-top:9px; border-top:1px solid #ded2c1; font-size:11px; }
+    .ai-sources a { color:#765b43; text-decoration:underline; text-underline-offset:2px; }
+    .ai-warning { margin-top:8px; color:#866b51; font-size:11px; }
+    .ai-progress { display:grid; gap:8px; margin-top:10px; }
+    .ai-progress-step { display:flex; align-items:center; gap:9px; color:#9b8d7b; }
+    .ai-progress-step::before { content:""; width:8px; height:8px; flex:0 0 8px; border:1px solid #c3b39e; border-radius:50%; }
+    .ai-progress-step.done { color:#5f765f; }
+    .ai-progress-step.done::before { border-color:#6f8b70; background:#6f8b70; }
+    .ai-progress-step.active { color:#594a3b; font-weight:700; }
+    .ai-progress-step.active::before { border-color:#a67f59; border-top-color:transparent; animation:aiSpin .8s linear infinite; }
+    @keyframes aiSpin { to { transform:rotate(360deg); } }
+    .api-modal[hidden] { display:none; }
+    .api-modal { position:fixed; inset:0; z-index:220; display:grid; place-items:center; padding:18px; font-family:ui-sans-serif,"PingFang SC",sans-serif; }
+    .api-modal-backdrop { position:absolute; inset:0; background:rgba(35,30,25,.48); backdrop-filter:blur(4px); }
+    .api-dialog { position:relative; box-sizing:border-box; width:min(540px,100%); max-height:calc(100dvh - 36px); padding:25px; overflow:auto; border:1px solid rgba(101,82,60,.22); border-radius:20px; color:#40372f; background:#faf7ef; box-shadow:0 28px 80px rgba(37,29,21,.34); }
+    .api-dialog-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+    .api-dialog h2 { margin:0; color:#3e352d; font-family:Georgia,"Noto Serif SC",serif; font-size:25px; font-weight:500; }
+    .api-dialog-header p { margin:5px 0 0; color:#827464; font-size:12px; }
+    .api-dialog-close { width:38px; height:38px; flex:0 0 38px; padding:0; border:1px solid #d6c7b4; border-radius:50%; color:#6a5a49; background:#f5eee3; font-size:22px; cursor:pointer; }
+    .api-status { margin:17px 0 0; padding:10px 12px; border-radius:10px; color:#6c604f; background:#eee7db; font-size:12px; line-height:1.55; }
+    .api-status.success { color:#315e4a; background:#e2eee5; }
+    .api-status.error { color:#8a443b; background:#f5e4e0; }
+    .api-status.loading { color:#72593f; background:#f2e8da; }
+    .api-config-form { display:grid; gap:14px; margin-top:18px; }
+    .api-config-form label { display:grid; gap:6px; color:#5d5042; font-size:12px; font-weight:700; }
+    .api-config-form input,.api-config-form select { box-sizing:border-box; width:100%; min-height:44px; padding:9px 11px; border:1px solid #d3c4b1; border-radius:10px; outline:0; color:#3f372f; background:#fffdf8; font:13px ui-sans-serif,"PingFang SC",sans-serif; }
+    .api-config-form input:focus,.api-config-form select:focus { border-color:#a67f59; box-shadow:0 0 0 3px rgba(166,127,89,.12); }
+    .api-search-lock { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 12px; border:1px solid #ddd1c1; border-radius:10px; color:#5f5345; background:#f6f0e6; font-size:12px; }
+    .api-search-lock span:last-child { color:#3e7259; font-weight:800; }
+    .api-config-note { margin:0; color:#827363; font-size:11px; line-height:1.6; }
+    .api-dialog-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:9px; margin-top:2px; }
+    .api-dialog-actions button:disabled { opacity:.55; cursor:wait; }
     .ai-composer { width:64px; height:64px; display:flex; align-items:center; overflow:hidden; border:1px solid rgba(255,255,255,.82); border-radius:999px; background:#ba9873; box-shadow:0 13px 30px rgba(48,38,25,.25); transition:width .42s cubic-bezier(.2,.75,.2,1),background .2s ease; }
     .ai-composer.open { width:min(360px,calc(100vw - 36px)); background:#faf7ef; }
     .ai-toggle { position:relative; flex:0 0 64px; width:64px; height:64px; padding:0; border:2px solid white; border-radius:50%; color:white; background:transparent; cursor:pointer; touch-action:manipulation; transition:transform .25s ease,color .2s ease,border-color .2s ease; }
@@ -121,18 +162,24 @@
       .topbar { grid-template-columns:50px 1fr 94px; min-height:135px; }
       .brand h1 { font-size:29px; }
       .brand p { font-size:13px; }
-      .journal-stage { min-height:0; padding-top:50px; padding-bottom:80px; }
-      .record-nav { top:0; font-size:13px; }
-      .book { width:calc(100% - 128px); min-height:100dvh; }
+      .journal-stage { min-height:0; padding-top:94px; padding-bottom:80px; }
+      .record-nav { top:48px; font-size:13px; }
+      .book { width:calc(100% - 32px); min-height:100dvh; }
       .paper { min-height:100dvh; height:auto; padding:48px 30px 88px; }
-      .tab-rail { top:150px; bottom:90px; width:64px; }
-      .tab-rail.left { right:calc(50% + (50% - 64px)); }
-      .tab-rail.right { left:calc(50% + (50% - 64px)); }
-      .city-tab { min-width:64px; max-width:64px; min-height:64px; padding:9px 6px; border-radius:10px 3px 3px 10px; font-size:14px; writing-mode:vertical-rl; touch-action:manipulation; }
-      .right .city-tab { border-radius:3px 9px 9px 3px; }
+      .tab-rail { top:0; bottom:auto; z-index:40; width:128px; height:auto; display:block; pointer-events:auto; }
+      .tab-rail.left { left:0; right:auto; align-items:flex-start; }
+      .tab-rail.right { left:auto; right:0; align-items:flex-end; }
+      .tab-more { box-sizing:border-box; width:36px; height:36px; min-height:36px; display:grid; place-items:center; margin-inline:auto; padding:0; border:1.5px solid #8b451d; border-radius:50%; color:#8b451d; background:#fbf8f0; box-shadow:none; appearance:none; -webkit-appearance:none; cursor:pointer; touch-action:manipulation; transition:transform .18s ease,background .18s ease; }
+      .tab-more span { width:4px; height:4px; display:block; border-radius:50%; background:currentColor; box-shadow:-7px 0 currentColor,7px 0 currentColor; font-size:0; }
+      .tab-more:hover { background:#f5eadc; transform:translateY(-1px); }
+      .tab-more:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+      .tab-list { box-sizing:border-box; width:128px; height:auto; max-height:calc(100dvh - 190px); display:none; align-items:center; gap:8px; margin-top:47px; padding:9px 8px; overflow-y:auto; border:1px solid rgba(80,64,44,.14); border-radius:15px; background:rgba(248,243,232,.97); box-shadow:0 14px 30px rgba(57,45,29,.2); overscroll-behavior:contain; backdrop-filter:blur(9px); }
+      .tab-rail.open .tab-list { display:flex; }
+      .tab-rail.open .tab-more { color:white; border-color:#8b451d; background:#8b451d; transform:none; }
+      .city-tab,.right .city-tab { min-width:108px; max-width:112px; min-height:54px; padding:9px 11px; border-radius:10px; font-size:14px; touch-action:manipulation; }
+      .city-tab:hover,.right .city-tab:hover { transform:none; }
       .entry-title { font-size:30px; }
       .entry-intro { font-size:14px; }
-      .section h3 { font-size:19px; }
       .search-panel { right:0; }
       .ai-dock { right:max(16px,env(safe-area-inset-right)); bottom:max(22px,env(safe-area-inset-bottom)); }
     }
@@ -143,6 +190,8 @@
       .brand h1 { font-size:24px; }
       .brand p { font-size:11px; letter-spacing:.08em; }
       .paper { padding:42px 22px; }
+      .api-modal { align-items:end; padding:0; }
+      .api-dialog { width:100%; max-height:92dvh; padding:22px 18px max(22px,env(safe-area-inset-bottom)); border-radius:20px 20px 0 0; }
       .entry-title { font-size:26px; }
       .entry-kicker { font-size:15px; }
       .section li,.section p { font-size:13px; }
@@ -159,15 +208,21 @@
         <button class="icon-button search-button" id="searchButton" aria-label="搜索城市" aria-expanded="false"><svg class="search-icon" viewBox="0 0 28 28" aria-hidden="true"><circle cx="12" cy="12" r="7.5"></circle><path d="m17.5 17.5 6 6"></path><path d="M9.4 8.8c1.5-1.2 3.9-1.3 5.5-.2" opacity=".38"></path></svg></button>
         <label class="profile" aria-label="更换用户头像"><span class="profile-fallback" id="profileFallback">ME</span><img id="profilePhoto" alt="用户头像" hidden><input id="profileUpload" type="file" accept="image/*"></label>
       </div>
-      <nav class="menu-panel" id="menuPanel" aria-label="主菜单"><button>旅行手账</button><button>收藏地点</button><button>个人偏好</button></nav>
+      <nav class="menu-panel" id="menuPanel" aria-label="主菜单"><button>旅行手账</button><button>收藏地点</button><button>个人偏好</button><button id="apiSettingsButton" type="button">API 设置</button></nav>
       <form class="search-panel" id="searchPanel"><input id="searchInput" aria-label="输入城市名称" placeholder="搜索城市…"></form>
     </header>
 
     <section class="journal-stage" aria-label="旅行手账">
       <button class="record-nav prev" id="previousButton" aria-label="查看更早的记录">← 更早的记录</button>
       <button class="record-nav next" id="nextButton" aria-label="查看更新的记录">更新的记录 →</button>
-      <div class="tab-rail left" id="leftTabs" aria-label="较早目的地"></div>
-      <div class="tab-rail right" id="rightTabs" aria-label="较新目的地"></div>
+      <div class="tab-rail left" id="leftTabs" aria-label="较早目的地">
+        <button class="tab-more" type="button" aria-label="更多较早目的地" aria-expanded="false" aria-controls="leftTabList"><span aria-hidden="true">•••</span></button>
+        <div class="tab-list" id="leftTabList"></div>
+      </div>
+      <div class="tab-rail right" id="rightTabs" aria-label="较新目的地">
+        <button class="tab-more" type="button" aria-label="更多较新目的地" aria-expanded="false" aria-controls="rightTabList"><span aria-hidden="true">•••</span></button>
+        <div class="tab-list" id="rightTabList"></div>
+      </div>
       <div class="book">
         <article class="paper" id="paper" aria-live="polite">
           <p class="entry-date" id="entryDate"></p>
@@ -184,6 +239,28 @@
       </div>
     </section>
   </main>
+  <div class="api-modal" id="apiModal" hidden>
+    <div class="api-modal-backdrop" data-api-close></div>
+    <section class="api-dialog" role="dialog" aria-modal="true" aria-labelledby="apiDialogTitle">
+      <header class="api-dialog-header">
+        <div><h2 id="apiDialogTitle">API 设置</h2><p>配置兼容模型接口，保存后立即用于 AI 旅行问答。</p></div>
+        <button class="api-dialog-close" id="apiDialogClose" type="button" aria-label="关闭 API 设置">×</button>
+      </header>
+      <div class="api-status" id="apiStatus" role="status" aria-live="polite" hidden></div>
+      <form class="api-config-form" id="apiConfigForm">
+        <label>API Key<input id="apiKeyInput" name="api_key" type="password" maxlength="500" autocomplete="new-password" placeholder="输入 API Key"></label>
+        <label>Base URL<input id="apiBaseUrlInput" name="base_url" type="url" maxlength="300" required></label>
+        <label>模型<input id="apiModelInput" name="model" type="text" maxlength="100" required placeholder="填写模型名称，例如 doubao-seed-2.1-turbo"></label>
+        <div class="api-search-lock"><span>Web Search 联网检索</span><span>始终开启</span></div>
+        <p class="api-config-note">API Key 仅保存在当前本地 Node 进程内存中，不写入 HTML、浏览器存储或接口响应。服务重启后会重新读取服务端 `.env`。</p>
+        <div class="api-dialog-actions">
+          <button class="ai-action" type="button" data-api-close>取消</button>
+          <button class="ai-action" type="submit" value="save">仅保存</button>
+          <button class="ai-action primary" type="submit" value="test">保存并测试</button>
+        </div>
+      </form>
+    </section>
+  </div>
   <aside class="ai-dock" aria-label="AI 旅行助手">
     <div class="ai-response" id="aiResponse" role="status" aria-live="polite"></div>
     <form class="ai-composer" id="aiComposer">
@@ -229,8 +306,8 @@
 
     function dataFor(index) { return {...fallback,...destinations[index]}; }
     function renderTabs() {
-      const left = $('#leftTabs');
-      const right = $('#rightTabs');
+      const left = $('#leftTabList');
+      const right = $('#rightTabList');
       left.innerHTML = '';
       right.innerHTML = '';
       const midpoint = Math.ceil(initialDestinationCount / 2);
@@ -252,7 +329,27 @@
       leftIndexes.forEach(index => appendTab(index,left));
       [...newIndexes,...originalRightIndexes].forEach(index => appendTab(index,right));
     }
-    function fillList(selector,items) { $(selector).innerHTML = items.map(item => `<li>${item}</li>`).join(''); }
+    function closeTabRails(except = null) {
+      document.querySelectorAll('.tab-rail').forEach(rail => {
+        if (rail === except) return;
+        rail.classList.remove('open');
+        rail.querySelector('.tab-more').setAttribute('aria-expanded','false');
+      });
+    }
+    document.querySelectorAll('.tab-more').forEach(button => {
+      button.addEventListener('click',event => {
+        event.stopPropagation();
+        const rail = button.closest('.tab-rail');
+        const open = !rail.classList.contains('open');
+        closeTabRails(rail);
+        rail.classList.toggle('open',open);
+        button.setAttribute('aria-expanded',String(open));
+      });
+    });
+    document.addEventListener('click',event => {
+      if (!event.target.closest('.tab-rail')) closeTabRails();
+    });
+    function fillList(selector,items) { $(selector).innerHTML = items.map(item => `<li>${escapeHTML(item)}</li>`).join(''); }
     function renderEntry() {
       const data = dataFor(active);
       $('#entryDate').textContent = data.date;
@@ -261,8 +358,8 @@
       $('#entryIntro').textContent = data.intro;
       fillList('#overviewList',data.overview);
       fillList('#highlightList',data.highlights);
-      $('#routeList').innerHTML = data.routes.map(row => { const [icon,text] = row.split('|'); return `<p class="route-row"><span>${icon}</span><span>${text}</span></p>`; }).join('');
-      $('#foodList').innerHTML = data.food.map(item => `<p>• ${item}</p>`).join('');
+      $('#routeList').innerHTML = data.routes.map(row => { const [icon,text] = row.split('|'); return `<p class="route-row"><span>${escapeHTML(icon)}</span><span>${escapeHTML(text || '')}</span></p>`; }).join('');
+      $('#foodList').innerHTML = data.food.map(item => `<p>• ${escapeHTML(item)}</p>`).join('');
       $('#packingText').textContent = data.packing;
       $('#quoteText').textContent = data.quote;
       $('#positionDots').innerHTML = destinations.map((_,index) => `<span class="${index === active ? 'active' : ''}"></span>`).join('');
@@ -270,32 +367,84 @@
     }
     function select(index) {
       active = (index + destinations.length) % destinations.length;
+      closeTabRails();
       paper.classList.add('changing');
       setTimeout(() => { renderEntry(); paper.classList.remove('changing'); },140);
     }
-    const knownPlaces = ['上海','北京','杭州','苏州','成都','重庆','西安','广州','深圳','厦门','青岛','长沙','武汉','南京','大阪','宇治','神户','箱根','富士山','北海道','冲绳','首尔','曼谷','新加坡','罗马','伦敦','纽约','悉尼','京都','奈良','巴黎','新疆','清迈','冰岛','大理','东京','里斯本','摩洛哥','布达佩斯','哥本哈根','伊斯坦布尔','阿那亚'];
     const planColors = ['#e5cba7','#d8e4b5','#d9d3e7','#efcbd0','#cbd4e9','#c9ddd2'];
-    function escapeHTML(value) { return value.replace(/[&<>"']/g,char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+    const aiConversation = [];
+    function escapeHTML(value) { return String(value ?? '').replace(/[&<>"']/g,char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
     function showAIResponse(content) {
-      $('#aiResponse').innerHTML = `<strong>AI TRAVEL ASSISTANT</strong>${content}`;
-      $('#aiResponse').classList.add('show');
+      $('#aiResponse').innerHTML = `<div class="ai-response-head"><strong>AI TRAVEL ASSISTANT</strong><button class="ai-response-close" type="button" data-ai-action="dismiss-response" aria-label="收起 AI 回答">×</button></div>${content}`;
+      if ($('#aiComposer').classList.contains('open')) $('#aiResponse').classList.add('show');
     }
-    function findDestination(query) {
-      const known = knownPlaces.find(place => query.includes(place));
-      if (known) return known;
-      const bare = query.trim();
-      if (/^[\u4e00-\u9fa5]{2,10}$/.test(bare) && !/修改|调整|推荐|哪里|怎么|行程|计划|旅行|增加|删除/.test(bare)) return bare;
-      const match = query.match(/(?:想去|准备去|计划去|前往|新增旅行计划|新建旅行计划|创建旅行计划)([\u4e00-\u9fa5]{2,10})/);
-      if (!match) return null;
-      const candidate = match[1].replace(/(?:玩|旅行|旅游|行程|计划|看看|五天|七天|一周).*$/,'');
-      return candidate.length >= 2 ? candidate : null;
+    function startAIProgress() {
+      const labels = ['理解旅行需求','调用联网检索','核对来源信息','生成结构化建议'];
+      const timers = [];
+      const render = activeIndex => showAIResponse(`<p>AI 正在处理，请保持页面打开。</p><div class="ai-progress">${labels.map((label,index) => `<div class="ai-progress-step ${index < activeIndex ? 'done' : index === activeIndex ? 'active' : ''}">${label}</div>`).join('')}</div>`);
+      render(0);
+      [[900,1],[10000,2],[30000,3]].forEach(([delay,index]) => timers.push(setTimeout(() => render(index),delay)));
+      return () => timers.forEach(clearTimeout);
     }
-    function parseDuration(query) {
-      const match = query.match(/(\d{1,2})\s*(?:天|日)/);
-      if (match) return Math.max(1,Math.min(30,Number(match[1])));
-      if (/一周|七天/.test(query)) return 7;
-      if (/周末|两天|二天/.test(query)) return 2;
-      return null;
+    async function showLLMConfig() {
+      const modal = $('#apiModal');
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+      setAPIStatus('','');
+      try {
+        const response = await fetch('/api/llm/config');
+        const config = await response.json();
+        if (!response.ok) throw new Error(config.error?.message || '无法读取配置。');
+        const modelInput = $('#apiModelInput');
+        modelInput.value = config.model;
+        $('#apiBaseUrlInput').value = config.base_url;
+        $('#apiKeyInput').value = '';
+        $('#apiKeyInput').placeholder = config.configured ? '留空则保留当前 Key' : '输入 API Key';
+        requestAnimationFrame(() => (config.configured ? modelInput : $('#apiKeyInput')).focus());
+      } catch (error) {
+        $('#apiBaseUrlInput').value ||= 'https://ark.cn-beijing.volces.com/api/plan/v3';
+        $('#apiModelInput').value ||= 'doubao-seed-2.1-turbo';
+        setAPIStatus('','');
+      }
+    }
+    function closeLLMConfig() {
+      $('#apiModal').hidden = true;
+      document.body.style.overflow = '';
+      $('#apiSettingsButton').focus();
+    }
+    function setAPIStatus(type,message) {
+      const status = $('#apiStatus');
+      status.hidden = !message;
+      status.className = `api-status${type ? ` ${type}` : ''}`;
+      status.textContent = message;
+    }
+    async function saveLLMConfig(runTest) {
+      const form = $('#apiConfigForm');
+      const buttons = form.querySelectorAll('button');
+      buttons.forEach(button => button.disabled = true);
+      try {
+        setAPIStatus('loading',runTest ? '正在保存配置…' : '正在保存配置…');
+        const fields = new FormData(form);
+        const response = await fetch('/api/llm/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:fields.get('api_key'),base_url:fields.get('base_url'),model:fields.get('model')})});
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(response.status === 404 ? '配置接口不可用，请重启本地服务。' : payload.error?.message || '配置保存失败。');
+        $('#apiKeyInput').value = '';
+        $('#apiKeyInput').placeholder = '留空则保留当前 Key';
+        if (!runTest) {
+          setAPIStatus('success',`保存成功 · ${payload.model} · 已立即生效`);
+          return;
+        }
+        setAPIStatus('loading','配置已保存，正在进行轻量连接测试（最长 25 秒）…');
+        const testResponse = await fetch('/api/llm/config/test',{method:'POST'});
+        const testPayload = await testResponse.json().catch(() => ({}));
+        if (!testResponse.ok) throw new Error(testPayload.error?.message || 'API 连通性测试失败。');
+        const sourceCount = Number(testPayload.source_count) || 0;
+        setAPIStatus(sourceCount ? 'success' : '',sourceCount ? `连接成功 · ${testPayload.model} · Web Search 返回 ${sourceCount} 个来源` : `模型连接成功 · ${testPayload.model}，但本次未返回检索来源`);
+      } catch (error) {
+        setAPIStatus('error',error.message || '配置或连接测试失败。');
+      } finally {
+        buttons.forEach(button => button.disabled = false);
+      }
     }
     function buildOverview(city,duration,waypoint) {
       const beats = city === '上海'
@@ -307,80 +456,105 @@
         return `Day ${index + 1}｜${detail}`;
       });
     }
-    function recommendationOptions(query) {
-      if (/冬|雪|春节|圣诞/.test(query)) return ['北海道','冰岛','新疆'];
-      if (/夏|暑|避暑/.test(query)) return ['大理','冰岛','新疆'];
-      if ((parseDuration(query) || 5) <= 3) return ['奈良','清迈','京都'];
-      return ['北海道','伊斯坦布尔','大理'];
+    function safeSourceURL(value) {
+      try { const url = new URL(value); return url.protocol === 'https:' ? url.href : null; }
+      catch { return null; }
     }
-    function proposalForModify(query) {
-      const target = destinations[active];
-      const duration = parseDuration(query);
-      const waypoint = knownPlaces.find(place => place !== target.city && query.includes(place)) || null;
-      const changes = [];
-      if (duration) changes.push(`旅行周期调整为 ${duration} 天`);
-      if (waypoint) changes.push(`新增途经点：${waypoint}`);
-      if (!changes.length) changes.push(`按要求调整当前行程：“${escapeHTML(query)}”`);
-      return {type:'modify',targetIndex:active,duration,waypoint,query,summary:changes.join('；')};
-    }
-    function proposalForNew(city,query) {
-      const duration = parseDuration(query) || 5;
-      return {type:'create',city,duration,query,summary:`新建「${city}」${duration} 天旅行计划`};
-    }
-    function showConfirmation(action) {
-      pendingAIAction = action;
-      const targetName = action.type === 'modify' ? destinations[action.targetIndex].city : action.city;
-      showAIResponse(`<p>准备${action.type === 'modify' ? '修改当前记录' : '创建新记录'}：<em>${targetName}</em></p><p>${action.summary}</p><p>确认后才会写入页面。</p><div class="ai-actions"><button class="ai-action primary" type="button" data-ai-action="confirm">确认执行</button><button class="ai-action" type="button" data-ai-action="cancel">取消</button></div>`);
-    }
-    function classifyAIRequest(query) {
-      const wantsRecommendation = /去哪里|去哪|推荐|适合去|目的地/.test(query) && !findDestination(query);
-      const explicitNew = /(?:新增|新建|创建).{0,4}(?:旅行|行程|计划)|计划去|安排.{0,4}旅行|想去|准备去/.test(query);
-      const modifyCurrent = /当前|本页|这次|这个行程|修改|更改|调整|改成|延长|缩短|途[经径]点|增加|添加|删除/.test(query) && !/(?:新增|新建|创建).{0,4}(?:旅行|行程|计划)/.test(query);
-      const city = findDestination(query);
-      const bareDestination = city && query.trim() === city;
-      if (wantsRecommendation || (!city && explicitNew)) {
-        const options = recommendationOptions(query);
-        showAIResponse(`<p>根据你的时间和旅行诉求，推荐先考虑：</p><div class="ai-actions">${options.map(place => `<button class="ai-action" type="button" data-ai-action="choose" data-city="${place}">${place}</button>`).join('')}</div><p>选择目的地后，我会先展示新计划提案，再请你确认创建。</p>`);
+    function renderAIResult(response) {
+      const message = `<p>${escapeHTML(response.assistant_message).replace(/\n/g,'<br>')}</p>`;
+      const results = (response.results || []).slice(0,5).map(result => {
+        const details = (result.details || []).slice(0,4).map(item => `<span>• ${escapeHTML(item)}</span>`).join('');
+        const choose = result.type === 'destination' && result.destination
+          ? `<div class="ai-actions"><button class="ai-action" type="button" data-ai-action="choose" data-city="${escapeHTML(result.destination)}">规划 ${escapeHTML(result.destination)}</button></div>` : '';
+        return `<div class="ai-result"><b>${escapeHTML(result.title)}</b><span>${escapeHTML(result.summary)}</span>${details}${choose}</div>`;
+      }).join('');
+      const sources = (response.citations || []).map(source => {
+        const href = safeSourceURL(source.url);
+        return href ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.title || new URL(href).hostname)}</a>` : '';
+      }).filter(Boolean);
+      const sourceHTML = sources.length ? `<div class="ai-sources">来源：${sources.join(' · ')}</div>` : '';
+      const warnings = (response.warnings || []).map(item => `<div class="ai-warning">${escapeHTML(item)}</div>`).join('');
+      if (response.requires_confirmation && response.proposal) {
+        pendingAIAction = {...response.proposal,targetIndex:active};
+        showAIResponse(`${message}<p><em>${escapeHTML(response.proposal.summary)}</em></p><p>确认后才会写入页面。</p>${sourceHTML}${warnings}<div class="ai-actions"><button class="ai-action primary" type="button" data-ai-action="confirm">确认执行</button><button class="ai-action" type="button" data-ai-action="cancel">取消</button></div>`);
         return;
       }
-      if (explicitNew || bareDestination || (city && /去|到|旅行|计划|安排/.test(query) && !modifyCurrent)) {
-        showConfirmation(proposalForNew(city || '新旅程',query));
-        return;
+      showAIResponse(`${message}${results ? `<div class="ai-results">${results}</div>` : ''}${sourceHTML}${warnings}`);
+    }
+    async function askTravelAI(query) {
+      const send = $('#aiSend');
+      send.disabled = true;
+      pendingAIAction = null;
+      const stopProgress = startAIProgress();
+      try {
+        const response = await fetch('/api/ai/chat',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            message:query,
+            conversation:aiConversation.slice(-12),
+            profile:JSON.parse(localStorage.getItem('travel-profile') || '{}'),
+            current_plan:{id:`destination-${active}`,...dataFor(active)},
+            locale:document.documentElement.lang || 'zh-CN',
+            timezone:Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error?.message || 'AI 服务暂时不可用。');
+        aiConversation.push({role:'user',content:query},{role:'assistant',content:payload.assistant_message});
+        if (aiConversation.length > 24) aiConversation.splice(0,aiConversation.length - 24);
+        renderAIResult(payload);
+      } catch (error) {
+        showAIResponse(`<p>${escapeHTML(error.message || '无法连接到 AI 服务。')}</p><div class="ai-warning">联网检索不会降级。请检查模型配置或稍后重试。</div><div class="ai-actions"><button class="ai-action" type="button" data-ai-action="config">检查 LLM 配置</button></div>`);
+      } finally {
+        stopProgress();
+        send.disabled = false;
+        $('#aiInput').value = '';
       }
-      showConfirmation(proposalForModify(query));
+    }
+    function normalizedPlanPatch(proposal) {
+      const patch = proposal.patch?.plan || {};
+      const duration = patch.duration_days || proposal.duration_days || null;
+      return {...patch,duration_days:duration};
     }
     function executePendingAIAction() {
       if (!pendingAIAction) return;
-      const action = pendingAIAction;
+      const proposal = pendingAIAction;
       pendingAIAction = null;
-      if (action.type === 'modify') {
-        const item = destinations[action.targetIndex];
-        const current = dataFor(action.targetIndex);
-        if (action.duration) {
-          item.title = `${item.city}${action.duration}日旅行计划`;
-          item.overview = buildOverview(item.city,action.duration,action.waypoint);
-        } else if (action.waypoint) {
-          item.overview = [...current.overview];
-          item.overview.splice(Math.max(1,item.overview.length - 1),0,`途经${action.waypoint} · 核心景点 · 当地体验`);
-        } else {
-          item.intro = `${current.intro} AI 调整记录：${action.query}`;
-        }
-        if (action.waypoint && !item.kicker.includes(action.waypoint)) item.kicker = `${item.kicker} · 经${action.waypoint}`;
-        active = action.targetIndex;
+      const patch = normalizedPlanPatch(proposal);
+      if (proposal.operation === 'modify_current') {
+        const item = destinations[proposal.targetIndex];
+        const fields = ['title','kicker','intro','overview','highlights','food','packing','quote'];
+        if (patch.destination) item.city = patch.destination;
+        fields.forEach(field => { if (patch[field] !== null && patch[field] !== undefined) item[field] = patch[field]; });
+        if (patch.routes) item.routes = patch.routes.map(row => row.includes('|') ? row : `⌁|${row}`);
+        if (patch.duration_days && !patch.overview) item.overview = buildOverview(item.city,patch.duration_days,patch.waypoint);
+        if (patch.duration_days && !patch.title) item.title = `${item.city}${patch.duration_days}日旅行计划`;
+        active = proposal.targetIndex;
         renderEntry();
-        showAIResponse(`<p>已更新 <em>${item.city}</em> 的当前旅行记录。</p>`);
+        showAIResponse(`<p>已更新 <em>${escapeHTML(item.city)}</em> 的当前旅行记录。</p>`);
         return;
       }
-      const isShanghai = action.city === '上海';
-      const newItem = {city:action.city,color:planColors[destinations.length % planColors.length],date:'AI 新建旅行计划',title:action.city,kicker:isShanghai ? `${action.duration}日城市漫游 · 外滩、街区与江畔夜景` : `${action.duration}日旅行规划 · 由 AI 根据本次对话生成`,intro:`这是一份为${action.city}准备的${action.duration}天旅行计划。先以区域和节奏建立草案，之后可继续通过右下角 AI 对话调整途经点、天数与偏好。`,overview:buildOverview(action.city,action.duration),highlights:isShanghai ? ['外滩：建议清晨或蓝调时刻前往，避开高峰并欣赏万国建筑群。','武康路与衡山路：以步行为主，串联老洋房、梧桐街道与社区咖啡馆。','浦东美术馆与陆家嘴：预留半天，从城市天际线走到黄浦江夜景。','豫园与苏州河：分别体验传统城市肌理与更新后的滨水空间。'] : [...fallback.highlights],routes:isShanghai ? ['🚇|市内交通：地铁覆盖主要区域，使用交通码即可通行。','⛴|过江体验：可选择轮渡连接浦西与浦东，避开道路拥堵。','⌁|街区步行：武康路、外滩和苏州河适合分区域慢行。'] : [...fallback.routes],food:isShanghai ? ['早餐：生煎、小笼与咸豆浆','午餐：本帮菜、葱油拌面','晚餐：上海菜或江景餐厅','甜点：蝴蝶酥、排骨年糕与季节青团'] : [...fallback.food],packing:fallback.packing,quote:fallback.quote};
-      destinations.push(newItem);
-      active = destinations.length - 1;
-      renderEntry();
-      showAIResponse(`<p>已创建 <em>${action.city}</em> 的新旅行记录，并切换到新页面。</p>`);
+      if (proposal.operation === 'create_plan') {
+        const city = proposal.destination || patch.destination || '新旅程';
+        const duration = patch.duration_days || 5;
+        const newItem = {city,color:planColors[destinations.length % planColors.length],date:'AI 新建旅行计划',title:patch.title || `${city}${duration}日旅行计划`,kicker:patch.kicker || `${duration}日旅行规划 · AI 检索生成`,intro:patch.intro || `这是一份为${city}准备的${duration}天旅行计划。`,overview:patch.overview || buildOverview(city,duration,patch.waypoint),highlights:patch.highlights || [...fallback.highlights],routes:(patch.routes || fallback.routes).map(row => row.includes('|') ? row : `⌁|${row}`),food:patch.food || [...fallback.food],packing:patch.packing || fallback.packing,quote:patch.quote || fallback.quote};
+        destinations.push(newItem);
+        active = destinations.length - 1;
+        renderEntry();
+        showAIResponse(`<p>已创建 <em>${escapeHTML(city)}</em> 的新旅行记录，并切换到新页面。</p>`);
+        return;
+      }
+      if (proposal.operation === 'update_profile') {
+        const current = JSON.parse(localStorage.getItem('travel-profile') || '{}');
+        localStorage.setItem('travel-profile',JSON.stringify({...current,...proposal.patch?.profile}));
+        showAIResponse('<p>已更新旅行偏好档案。</p>');
+      }
     }
     $('#previousButton').addEventListener('click',() => select(active - 1));
     $('#nextButton').addEventListener('click',() => select(active + 1));
     document.addEventListener('keydown',event => {
+      if (event.key === 'Escape') closeTabRails();
       if (event.target.matches('input')) return;
       if (event.key === 'ArrowLeft') select(active - 1);
       if (event.key === 'ArrowRight') select(active + 1);
@@ -401,6 +575,11 @@
       if (open && panel === $('#searchPanel')) $('#searchInput').focus();
     }
     $('#menuButton').addEventListener('click',() => togglePanel($('#menuButton'),$('#menuPanel')));
+    $('#apiSettingsButton').addEventListener('click',async () => {
+      $('#menuPanel').classList.remove('open');
+      $('#menuButton').setAttribute('aria-expanded','false');
+      await showLLMConfig();
+    });
     $('#searchButton').addEventListener('click',() => togglePanel($('#searchButton'),$('#searchPanel')));
     $('#searchPanel').addEventListener('submit',event => {
       event.preventDefault();
@@ -426,31 +605,33 @@
       const composer = $('#aiComposer');
       const open = !composer.classList.contains('open');
       composer.classList.toggle('open',open);
+      if (!open) $('#aiResponse').classList.remove('show');
       $('#aiToggle').setAttribute('aria-expanded',String(open));
       $('#aiToggle').setAttribute('aria-label',open ? '关闭 AI 对话' : '打开 AI 对话');
       if (open) requestAnimationFrame(() => $('#aiInput').focus());
     });
-    $('#aiComposer').addEventListener('submit',event => {
+    $('#aiComposer').addEventListener('submit',async event => {
       event.preventDefault();
       const query = $('#aiInput').value.trim();
       if (!query) { $('#aiInput').focus(); return; }
-      const send = $('#aiSend');
-      send.disabled = true;
-      pendingAIAction = null;
-      showAIResponse('<p>正在识别你的旅行意图…</p>');
-      setTimeout(() => {
-        classifyAIRequest(query);
-        send.disabled = false;
-        $('#aiInput').value = '';
-      },520);
+      await askTravelAI(query);
     });
-    $('#aiResponse').addEventListener('click',event => {
+    $('#apiConfigForm').addEventListener('submit',async event => {
+      event.preventDefault();
+      await saveLLMConfig(event.submitter?.value === 'test');
+    });
+    $('#apiDialogClose').addEventListener('click',closeLLMConfig);
+    $('#apiModal').addEventListener('click',event => { if (event.target.matches('[data-api-close]')) closeLLMConfig(); });
+    document.addEventListener('keydown',event => { if (event.key === 'Escape' && !$('#apiModal').hidden) closeLLMConfig(); });
+    $('#aiResponse').addEventListener('click',async event => {
       const button = event.target.closest('[data-ai-action]');
       if (!button) return;
       const action = button.dataset.aiAction;
       if (action === 'confirm') executePendingAIAction();
       if (action === 'cancel') { pendingAIAction = null; showAIResponse('<p>已取消，本次没有修改任何旅行记录。</p>'); }
-      if (action === 'choose') showConfirmation(proposalForNew(button.dataset.city,'目的地推荐'));
+      if (action === 'choose') await askTravelAI(`请为${button.dataset.city}创建一份旅行计划`);
+      if (action === 'config') await showLLMConfig();
+      if (action === 'dismiss-response') $('#aiResponse').classList.remove('show');
     });
     renderEntry();
   </script>
