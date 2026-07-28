@@ -1,13 +1,13 @@
-# 世界那么大 · AI Travel Planner
+# 山海签 · GoLore
 
 > 用对话创建和调整旅行计划，再用一本可以翻阅的旅行手账把它保存下来。
 
-这是一个面向中文旅行者的 AI 旅行规划产品原型。用户可以通过统一的 AI 对话入口提出目的地、天数和途经点需求，查看 AI 的变更提案，并在确认后创建或修改旅行记录。
+这是一个面向中文旅行者的 AI 旅行规划产品。用户可以通过统一的 AI 对话入口提出目的地、天数和途经点需求，查看 AI 的变更提案，并在确认后创建或修改旅行记录。
 
 > [!IMPORTANT]
 > 当前版本已接入服务端大模型问答链路：配置 API Key 后，通过 OpenAI Responses API 与 Web Search 生成结构化回答和旅行计划提案。专用酒店、地图、预算服务与云端账号仍未接入。
 
-![旅行手账总览](docs/images/overview.png)
+![旅行手账总览] <img width="1129" height="1201" alt="image" src="https://github.com/user-attachments/assets/8f3ff3a4-fb61-4cad-8e05-81c4d4171ed0" /> 
 
 ## 产品定位
 
@@ -39,7 +39,7 @@ AI 不会直接覆盖旅行记录。新建页面或修改当前页面前，必�
 
 | AI 执行确认 | 移动端体验 |
 | --- | --- |
-| ![AI 修改和新建前的确认流程](docs/images/ai-confirmation.png) | ![移动端旅行手账与 AI 入口](docs/images/mobile.png) |
+| <img width="1129" height="808" alt="image" src="https://github.com/user-attachments/assets/14139920-dd56-40f0-bc3e-3b1a5a0793c7" /><img width="1129" height="808" alt="image" src="https://github.com/user-attachments/assets/d9e932c1-2a7a-43e5-8014-b75db67dd977" />| <img width="1129" height="1201" alt="image" src="https://github.com/user-attachments/assets/8f3ff3a4-fb61-4cad-8e05-81c4d4171ed0" /> |
 
 当前 Demo 支持：
 
