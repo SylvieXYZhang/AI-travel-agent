@@ -22,7 +22,7 @@
   - [x] 新建页面以目的地命名；最新页面标签固定排在右侧最上方。
   - [x] 取消后不改变任何旅行记录。
   - [x] 新回复覆盖旧回复。
-- Current limitation: 当前为纯前端关键词路由与模板数据，不连接真实模型，刷新页面后 AI 新建或修改的行程不会持久化。
+- Current limitation: 已由 AI-CHAT-002 替换为真实模型链路；刷新页面后 AI 新建或修改的行程仍不会持久化。
 
 ## AI-CHAT-001-BUG-01 — 纯目的地被误判为当前页修改
 
@@ -47,11 +47,13 @@
 - Status: Implemented
 - Decision: 用户未上传头像时显示 `ME`；上传后使用本地存储恢复头像。
 
-## AI-CHAT-002 — 真实模型与结构化意图
+## AI-CHAT-002 — 真实模型、检索与结构化意图
 
-- Status: Backlog
-- Goal: 用真实模型返回经过 schema 校验的 `modify_current`、`create_plan`、`recommend_destinations` 意图与参数。
-- Guardrail: 模型输出仍不得直接写数据，审批门必须由应用代码强制执行。
+- Status: Implemented
+- Goal: 用真实模型返回经过 schema 校验的 `modify_current`、`create_plan`、`recommend_destinations` 意图与参数，并通过 Web Search 提供检索来源。
+- Implementation: `POST /api/ai/chat` 调用 Responses API；服务端直接加载 `skills/build-travel-ai-qa` 的运行时 Prompt/Schema 契约，并注入 Web Search、超时、限流和结果校验；浏览器仅消费结构化结果。
+- Guardrail: 模型输出仍不得直接写数据；服务端强制 mutation 意图需要确认，最终写入由前端确认操作执行。
+- Configuration: 通过 `LLM_API_KEY`、`LLM_MODEL`、`LLM_BASE_URL` 等服务端环境变量配置，不向浏览器暴露密钥。
 
 ## DATA-001 — 旅行记录持久化与撤销
 
@@ -60,8 +62,9 @@
 
 ## TEST-001 — AI 意图路由自动化测试
 
-- Status: Backlog
+- Status: In progress
 - Goal: 为关键词冲突、未知目的地、异常天数、取消操作及重复创建建立单元和交互测试。
+- Implemented: 请求校验、Mock Provider、Responses API 请求形状、Web Search 来源归一化、mutation 确认门和 HTTP 端到端测试。
 
 ## AI-UI-001 — AI 对话视觉一致性
 
