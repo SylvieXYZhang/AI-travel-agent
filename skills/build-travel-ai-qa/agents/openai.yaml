@@ -1,0 +1,4 @@
+interface:
+  display_name: "Travel AI API & Prompt Engineering"
+  short_description: "Build evidence-aware travel AI backends with safe approvals"
+  default_prompt: "Use $build-travel-ai-qa to replace a mock travel chatbot with a production-ready LLM API and retrieval pipeline."
