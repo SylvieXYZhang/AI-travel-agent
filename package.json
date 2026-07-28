@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.cjs",
     "test": "node --test",
-    "smoke:ai": "node scripts/smoke-ai.cjs"
+    "smoke:ai": "node scripts/smoke-ai.cjs",
+    "smoke:batch": "node scripts/smoke-batch.cjs"
   },
   "engines": {
     "node": ">=18"

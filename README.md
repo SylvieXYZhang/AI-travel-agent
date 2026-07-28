@@ -94,6 +94,24 @@ npm.cmd run smoke:ai -- "北京出发，秋天一周，推荐三个自然风景�
 
 生产问答不会在联网检索失败后降级为无检索回答；复杂问答默认允许 300 秒，达到 `LLM_TIMEOUT_MS` 后会明确返回超时。配置页轻量测试使用独立的 `LLM_TEST_TIMEOUT_MS=25000`，不会缩短正式问答。Demo 等待期间会分阶段显示需求解析、联网检索、来源核对和答案生成状态。
 
+#### 批量冒烟测试
+
+`smoke:batch` 一次性运行一组中文旅行规划查询（含“规划三天上海行”“带父母去北京、避开拥挤景点且少走路”等），逐条校验意图、模式、提案与确认门，并打印每条 PASS/FAIL 与汇总结果：
+
+```powershell
+npm.cmd run smoke:batch
+```
+
+真实运行需要先在 `.env` 配置 `LLM_API_KEY`；未配置时脚本会明确报错并以退出码 2 结束，不发送任何请求。常用参数：
+
+```powershell
+npm.cmd run smoke:batch -- --mock                       # 使用 LLM_PROVIDER=mock 做无依赖流水线冒烟
+npm.cmd run smoke:batch -- --only shanghai-3d,week-where # 只跑指定用例
+npm.cmd run smoke:batch -- --json                       # 输出机器可读的 JSON 结果
+```
+
+意图、模式、提案存在性等结构约束为硬校验；关键词命中、引用数量等语义项因模型措辞会变化，仅作为提示（warning）输出。
+
 也可以打开左上角主菜单，点击“API 设置”进入独立配置弹窗。“保存并测试”会使用刚保存的配置执行轻量 Web Search 连通性测试，默认 25 秒超时，并反馈模型连接和检索来源状态。API Key 只保存在当前本地 Node 进程内存，不写入 HTML、浏览器存储或接口响应；服务重启后内存配置会清除并重新读取 `.env`。
 
 若检索仍超时，可切换到更轻量的允许模型后重试完整检索：
