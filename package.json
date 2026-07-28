@@ -1,0 +1,14 @@
+{
+  "name": "ai-travel-agent-demo",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Travel planner demo with a server-side LLM and web-search workflow",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test",
+    "smoke:ai": "node scripts/smoke-ai.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
