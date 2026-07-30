@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createTravelAI, getConfig, validateConfig, validateRequest } = require('../lib/travel-ai.cjs');
+const { createTravelAI, getConfig, validateConfig, validateRequest, responseSchemaForContext, isAccommodationRequest, hasAccommodationBudget, accommodationQueryMessage, wantsXiaohongshu, buildXiaohongshuQuery, buildXiaohongshuWebSearchQuery, buildAccommodationPriceWebSearchQuery } = require('../lib/travel-ai.cjs');
 const { createServer } = require('../server.cjs');
 const skillContract = require('../skills/build-travel-ai-qa/scripts/travel-ai-contract.cjs');
 const { loadEnvFile } = require('../lib/load-env.cjs');
@@ -22,7 +22,7 @@ function modifyProposal() {
       profile: null,
       plan: {
         destination: null, duration_days: 7, waypoint: null, title: '京都7日旅行计划', kicker: null,
-        intro: null, overview: null, highlights: null, routes: null, food: null, packing: null, quote: null
+        intro: null, overview: null, highlights: null, routes: null, food: null, accommodation: null, daily_stays: null, packing: null, quote: null
       }
     }
   };
@@ -36,6 +36,43 @@ test('request validation bounds and normalizes conversation', () => {
   let deep = {};
   for (let index = 0; index < 10; index += 1) deep = { child: deep };
   assert.throws(() => validateRequest({ message: 'test', profile: deep }), /嵌套层级过深/);
+  const apply = validateRequest({
+    message: '根据回答修改当前行程',
+    action: 'apply_answer_to_current_plan',
+    answer_context: {
+      assistant_message: '京都新建议',
+      results: [{ title: '清晨路线', summary: '避开人流', details: ['先去清水寺'] }],
+      citations: [{ title: '公开攻略', url: 'https://example.com/guide', provider: 'web' }]
+    }
+  });
+  assert.equal(apply.action, 'apply_answer_to_current_plan');
+  assert.equal(apply.answer_context.results[0].title, '清晨路线');
+  assert.throws(() => validateRequest({ message: '修改', action: 'apply_answer_to_current_plan', answer_context: { results: [] } }), /没有可用于修改行程/);
+});
+
+test('apply-answer requests require a complete non-null plan proposal', () => {
+  const regular = responseSchemaForContext({ action: null });
+  assert.equal(regular, skillContract.RESPONSE_SCHEMA);
+  const apply = responseSchemaForContext({ action: 'apply_answer_to_current_plan' });
+  assert.deepEqual(apply.properties.intent.enum, ['modify_current']);
+  assert.deepEqual(apply.properties.proposal.properties.operation.enum, ['modify_current']);
+  const plan = apply.properties.proposal.properties.patch.properties.plan;
+  for (const field of ['overview', 'highlights', 'routes', 'food', 'accommodation', 'daily_stays']) {
+    assert.equal(plan.properties[field].type, 'array');
+  }
+});
+
+test('system prompt requires detailed evidence-backed accommodation research', () => {
+  assert.match(skillContract.SYSTEM_PROMPT, /For any question or proposal involving accommodation, perform Web Search/);
+  assert.match(skillContract.SYSTEM_PROMPT, /property name.*neighborhood.*lodging type.*nearest useful transit/i);
+  assert.match(skillContract.SYSTEM_PROMPT, /official site and a reputable booking or map source/i);
+  assert.match(skillContract.SYSTEM_PROMPT, /Do not claim live room availability/);
+  assert.match(skillContract.SYSTEM_PROMPT, /default currency is CNY/);
+  assert.match(skillContract.SYSTEM_PROMPT, /require the user's acceptable nightly price range/i);
+  assert.match(skillContract.SYSTEM_PROMPT, /range without a currency.*CNY/i);
+  assert.match(skillContract.SYSTEM_PROMPT, /always run the exact site-restricted query/);
+  assert.match(skillContract.SYSTEM_PROMPT, /Exclude properties with credible material red flags/);
+  assert.match(skillContract.SYSTEM_PROMPT, /price_web_search_query/);
 });
 
 test('local env loading preserves existing process values and model config rejects Auto', t => {
@@ -54,12 +91,148 @@ test('local env loading preserves existing process values and model config rejec
   assert.throws(() => validateConfig(getConfig({ LLM_API_KEY: 'x', LLM_MODEL: 'unknown', LLM_ALLOWED_MODELS: 'glm-5.2' })), /不在允许/);
 });
 
+test('xiaohongshu retrieval is explicitly triggered and produces a focused query', () => {
+  assert.equal(wantsXiaohongshu('帮我查小红书上的京都咖啡店攻略'), true);
+  assert.equal(wantsXiaohongshu('京都咖啡店攻略'), false);
+  assert.equal(buildXiaohongshuQuery('帮我查小红书上的京都咖啡店攻略'), '京都咖啡店');
+  assert.equal(buildXiaohongshuWebSearchQuery('帮我查小红书上的京都咖啡店攻略'), 'site:xiaohongshu.com 京都咖啡店攻略');
+  assert.equal(buildXiaohongshuWebSearchQuery('使用现有 Web Search 搜索 site:xiaohongshu.com 京都攻略'), 'site:xiaohongshu.com 京都攻略');
+  assert.equal(isAccommodationRequest('推荐京都酒店'), true);
+  assert.equal(wantsXiaohongshu('推荐京都酒店'), true);
+  assert.equal(hasAccommodationBudget({ message: '推荐京都酒店，每晚预算 ¥600–1,000', conversation: [], profile: {} }), true);
+  assert.equal(buildXiaohongshuWebSearchQuery('京都酒店，每晚预算 ¥600–1,000'), 'site:xiaohongshu.com 京都酒店 每晚预算 ¥600–1 000 酒店 避雷 踩雷');
+  assert.match(buildAccommodationPriceWebSearchQuery('京都酒店，每晚预算 ¥600–1,000'), /酒店 官网 每晚价格 人民币$/);
+  assert.equal(accommodationQueryMessage({ message: '¥600–1,000/晚', conversation: [{ role: 'user', content: '推荐京都酒店' }] }), '推荐京都酒店 ¥600–1,000/晚');
+});
+
+test('accommodation search asks for a nightly budget before retrieval', async () => {
+  let fetchCalls = 0;
+  const ai = await createTravelAI({ fetchImpl: async () => { fetchCalls += 1; throw new Error('should not fetch'); } });
+  const value = await ai.chat({ message: '推荐几家京都住宿', conversation: [], profile: {} }, {});
+  assert.equal(value.intent, 'clarify');
+  assert.deepEqual(value.missing_fields, ['accommodation_price_range']);
+  assert.match(value.assistant_message, /未指定币种时默认使用人民币/);
+  assert.equal(fetchCalls, 0);
+});
+
+test('priced accommodation search injects Xiaohongshu risk and general price queries', async () => {
+  let synthesisContext;
+  const fetchImpl = async (url, options) => {
+    const request = JSON.parse(options.body);
+    synthesisContext = JSON.parse(request.input[0].content[0].text);
+    return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(responseValue()), output: [] }) };
+  };
+  const ai = await createTravelAI({ fetchImpl });
+  await ai.chat({ message: '推荐京都酒店，每晚预算 ¥600–1,000' }, {
+    LLM_API_KEY: 'test-key', LLM_MODEL: 'test-model', XHS_SEARCH_ENABLED: 'false', LLM_WEB_SEARCH_ENABLED: 'true'
+  });
+  assert.match(synthesisContext.retrieval.xiaohongshu.web_search_query, /^site:xiaohongshu\.com .*酒店 避雷 踩雷$/);
+  assert.match(synthesisContext.retrieval.accommodation.price_web_search_query, /酒店 官网 每晚价格 人民币$/);
+});
+
+test('budget-only follow-up retains the prior accommodation search topic', async () => {
+  let synthesisContext;
+  const fetchImpl = async (url, options) => {
+    const request = JSON.parse(options.body);
+    synthesisContext = JSON.parse(request.input[0].content[0].text);
+    return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(responseValue()), output: [] }) };
+  };
+  const ai = await createTravelAI({ fetchImpl });
+  await ai.chat({
+    message: '¥600–1,000/晚',
+    conversation: [{ role: 'user', content: '推荐京都酒店' }, { role: 'assistant', content: '请提供每晚预算。' }]
+  }, { LLM_API_KEY: 'test-key', LLM_MODEL: 'test-model', XHS_SEARCH_ENABLED: 'false', LLM_WEB_SEARCH_ENABLED: 'true' });
+  assert.match(synthesisContext.retrieval.xiaohongshu.web_search_query, /京都酒店.*避雷 踩雷/);
+  assert.match(synthesisContext.retrieval.accommodation.price_web_search_query, /京都酒店/);
+});
+
+test('xiaohongshu search and detail evidence are injected before synthesis', async () => {
+  const requests = [];
+  const fetchImpl = async (url, options = {}) => {
+    requests.push({ url, body: options.body ? JSON.parse(options.body) : null });
+    if (url.endsWith('/api/v1/feeds/search')) {
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            feeds: [{
+              id: 'note-1', xsecToken: 'token-1',
+              noteCard: { displayTitle: '京都咖啡店实测', user: { nickname: '旅人甲' }, interactInfo: { likedCount: '120' } }
+            }]
+          }
+        })
+      };
+    }
+    if (url.endsWith('/api/v1/feeds/detail')) {
+      return {
+        ok: true,
+        json: async () => ({ success: true, data: { data: { note: {
+          noteId: 'note-1', title: '京都咖啡店实测', desc: '三家适合早晨到访的咖啡店。', time: 1710000000000,
+          user: { nickname: '旅人甲' }, interactInfo: { likedCount: '120', collectedCount: '60', commentCount: '8' }
+        } } } })
+      };
+    }
+    const context = JSON.parse(JSON.parse(options.body).input[0].content[0].text);
+    assert.equal(context.retrieval.xiaohongshu.status, 'ok');
+    assert.equal(context.retrieval.xiaohongshu.evidence[0].summary, '三家适合早晨到访的咖啡店。');
+    return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(responseValue()), output: [] }) };
+  };
+  const ai = await createTravelAI({ fetchImpl });
+  const value = await ai.chat({ message: '帮我查小红书上的京都咖啡店攻略' }, {
+    LLM_API_KEY: 'test-key', LLM_MODEL: 'test-model',
+    XHS_SEARCH_ENABLED: 'true', XHS_MCP_BASE_URL: 'http://127.0.0.1:18060'
+  });
+  assert.equal(requests.length, 3);
+  assert.equal(requests[0].body.keyword, '京都咖啡店');
+  assert.equal(value.citations[0].provider, 'xiaohongshu-mcp');
+  assert.match(value.citations[0].url, /xiaohongshu\.com\/explore\/note-1/);
+});
+
+test('xiaohongshu outage degrades with an explicit warning', async () => {
+  let synthesisContext;
+  const fetchImpl = async (url, options) => {
+    if (url.includes('/api/v1/feeds/search')) return { ok: false, json: async () => ({}) };
+    synthesisContext = JSON.parse(JSON.parse(options.body).input[0].content[0].text);
+    return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(responseValue()), output: [] }) };
+  };
+  const ai = await createTravelAI({ fetchImpl });
+  const value = await ai.chat({ message: '查一下小红书京都攻略' }, {
+    LLM_API_KEY: 'test-key', LLM_MODEL: 'test-model',
+    XHS_SEARCH_ENABLED: 'true', XHS_MCP_BASE_URL: 'http://127.0.0.1:18060'
+  });
+  assert.equal(synthesisContext.retrieval.xiaohongshu.status, 'web_search_fallback');
+  assert.equal(synthesisContext.retrieval.xiaohongshu.web_search_query, 'site:xiaohongshu.com 京都攻略');
+  assert.ok(value.warnings.some(item => item.includes('搜索引擎公开索引')));
+});
+
 test('mock provider supports a dependency-free end-to-end answer', async () => {
   const ai = await createTravelAI();
   const value = await ai.chat({ message: '京都有什么推荐？', current_plan: { city: '京都' } }, { LLM_PROVIDER: 'mock' });
   assert.equal(value.intent, 'answer_question');
   assert.equal(value.requires_confirmation, false);
   assert.match(value.assistant_message, /京都/);
+});
+
+test('mock provider applies answer suggestions as a material current-plan update', async () => {
+  const ai = await createTravelAI();
+  const currentPlan = {
+    id: 'destination-0', city: '京都', title: '京都行程', intro: '原行程',
+    overview: ['原概览'], highlights: ['原景点'], routes: ['原路线'], food: ['原美食'],
+    accommodation: ['原住宿推荐'], daily_stays: ['Day 1｜原酒店｜¥500–800/晚'], packing: '原行李', quote: '原句'
+  };
+  const value = await ai.chat({
+    message: '根据回答修改当前行程', action: 'apply_answer_to_current_plan', current_plan: currentPlan,
+    answer_context: {
+      assistant_message: '建议清晨出发',
+      results: [{ title: '清晨路线', summary: '先去清水寺避开人流', details: ['下午前往祇园'] }],
+      citations: []
+    }
+  }, { LLM_PROVIDER: 'mock' });
+  assert.equal(value.intent, 'modify_current');
+  assert.equal(value.proposal.operation, 'modify_current');
+  assert.ok(value.proposal.patch.plan.highlights.includes('清晨路线'));
+  assert.notDeepEqual(value.proposal.patch.plan.routes, currentPlan.routes);
 });
 
 test('Responses API uses web search and enforces mutation confirmation', async () => {
@@ -241,6 +414,44 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /fetch\('\/api\/llm\/config'/);
   assert.match(html, /fetch\('\/api\/llm\/config\/test'/);
   assert.match(html, /data-ai-action="dismiss-response"/);
+  assert.match(html, /id="editPlanButton"[^>]*>编辑行程<\/button>/);
+  assert.match(html, /id="inlineEditorToolbar"[^>]*hidden/);
+  assert.match(html, /id="inlineEditorActions"[^>]*hidden/);
+  assert.match(html, /class="save"[^>]*id="saveInlineEdit">保存修改<\/button>/);
+  assert.match(html, /id="textColorMenu"/);
+  assert.equal((html.match(/data-editor-color=/g) || []).length, 10);
+  assert.match(html, /document\.execCommand\('foreColor',false,color\)/);
+  assert.match(html, /EDITOR_TEXT_COLORS/);
+  assert.match(html, /id="insertMenu"/);
+  assert.match(html, /<summary>插入<\/summary>/);
+  assert.match(html, /id="insertLinkButton">插入链接<\/button>/);
+  assert.match(html, /id="insertImageUrlButton">网络图片<\/button>/);
+  assert.match(html, /id="inlineImageUpload"[^>]*type="file"/);
+  assert.match(html, /id="insertTableButton">插入 2×3 表格<\/button>/);
+  assert.match(html, /<h3>V\. 住宿安排<\/h3>/);
+  assert.match(html, /id="accommodationList"/);
+  assert.match(html, /id="dailyStayList"/);
+  assert.match(html, /function renderDailyStays\(items\)/);
+  assert.match(html, /function buildDailyStays\(city,duration\)/);
+  assert.match(html, /function deduplicateDestinations\(\)/);
+  assert.match(html, /restoreTravelPlans\(\);\s*deduplicateDestinations\(\);/);
+  assert.match(html, /const DEFAULT_CURRENCY = \{ code:'CNY', label:'人民币', symbol:'¥' \}/);
+  assert.match(html, /ALLOWED_EDITOR_CLASSES/);
+  assert.match(html, /function startInlineEditing\(\)/);
+  assert.match(html, /function saveInlineEditing\(\)/);
+  assert.match(html, /function sanitizeRichHTML\(value\)/);
+  assert.match(html, /ALLOWED_EDITOR_TAGS/);
+  assert.match(html, /\.editable-region\[contenteditable="true"\]/);
+  assert.match(html, /localStorage\.setItem\(PLAN_STORAGE_KEY,JSON\.stringify\(destinations\)\)/);
+  assert.match(html, /if \(!persistTravelPlans\(\)\)/);
+  assert.doesNotMatch(html, /id="planEditorModal"/);
+  assert.match(html, /data-ai-action="modify-from-answer">根据回答修改行程<\/button>/);
+  assert.match(html, /async function modifyPlanFromAnswer\(response\)/);
+  assert.match(html, /function planPatchChangesItem\(item,patch\)/);
+  assert.match(html, /action:options\.applyAnswer \? 'apply_answer_to_current_plan'/);
+  assert.match(html, /answer_context:options\.answerContext/);
+  assert.match(html, /pendingAIAction = \{\.\.\.payload\.proposal,targetIndex:options\.targetIndex\};\s*executePendingAIAction\(\)/);
+  assert.match(html, /修改内容：\$\{escapeHTML\(proposal\.summary\)\}/);
   assert.match(html, /if \(!open\) \$\('#aiResponse'\)\.classList\.remove\('show'\)/);
   assert.match(html, /id="apiSettingsButton"[^>]*>API 设置<\/button>/);
   assert.match(html, /id="apiModal"[^>]*hidden/);
