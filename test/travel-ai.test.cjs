@@ -62,6 +62,23 @@ test('apply-answer requests require a complete non-null plan proposal', () => {
   }
 });
 
+test('selected-text edits validate a bounded quote and force a modification proposal', () => {
+  const request = validateRequest({
+    message: '把这句话改得更简洁',
+    action: 'edit_selected_text',
+    current_plan: { id: 'destination-0', city: '京都', intro: '这是我期待已久的京都之旅。' },
+    selection_context: { text: '期待已久的京都之旅', field: 'intro', field_label: '行程简介' }
+  });
+  assert.equal(request.action, 'edit_selected_text');
+  assert.deepEqual(request.selection_context, { text: '期待已久的京都之旅', field: 'intro', field_label: '行程简介', item_index: null });
+  assert.throws(() => validateRequest({
+    message: '修改', action: 'edit_selected_text', current_plan: {}, selection_context: { text: 'x', field: 'unknown' }
+  }), /引用的行程文字无效/);
+  const schema = responseSchemaForContext(request);
+  assert.deepEqual(schema.properties.intent.enum, ['modify_current']);
+  assert.deepEqual(schema.properties.requires_confirmation.enum, [true]);
+});
+
 test('system prompt requires detailed evidence-backed accommodation research', () => {
   assert.match(skillContract.SYSTEM_PROMPT, /For any question or proposal involving accommodation, perform Web Search/);
   assert.match(skillContract.SYSTEM_PROMPT, /property name.*neighborhood.*lodging type.*nearest useful transit/i);
@@ -212,6 +229,28 @@ test('mock provider supports a dependency-free end-to-end answer', async () => {
   assert.equal(value.intent, 'answer_question');
   assert.equal(value.requires_confirmation, false);
   assert.match(value.assistant_message, /京都/);
+});
+
+test('mock provider edits only the field containing selected text', async () => {
+  const ai = await createTravelAI();
+  const value = await ai.chat({
+    message: '改得更有画面感',
+    action: 'edit_selected_text',
+    current_plan: { id: 'destination-0', city: '京都', intro: '走进古老的街巷，听雨落在屋檐上。', quote: '保持原样' },
+    selection_context: { text: '听雨落在屋檐上', field: 'intro', field_label: '行程简介' }
+  }, { LLM_PROVIDER: 'mock' });
+  assert.equal(value.intent, 'modify_current');
+  assert.equal(value.requires_confirmation, true);
+  assert.match(value.proposal.patch.plan.intro, /已按要求修改/);
+  assert.equal(value.proposal.patch.plan.quote, null);
+  const arrayValue = await ai.chat({
+    message: '只改我选中的这一条',
+    action: 'edit_selected_text',
+    current_plan: { id: 'destination-0', city: '京都', overview: ['清晨出发', '清晨出发'] },
+    selection_context: { text: '清晨出发', field: 'overview', field_label: '行程概览', item_index: 1 }
+  }, { LLM_PROVIDER: 'mock' });
+  assert.equal(arrayValue.proposal.patch.plan.overview[0], '清晨出发');
+  assert.match(arrayValue.proposal.patch.plan.overview[1], /已按要求修改/);
 });
 
 test('mock provider applies answer suggestions as a material current-plan update', async () => {
@@ -448,7 +487,11 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /data-ai-action="modify-from-answer">根据回答修改行程<\/button>/);
   assert.match(html, /async function modifyPlanFromAnswer\(response\)/);
   assert.match(html, /function planPatchChangesItem\(item,patch\)/);
-  assert.match(html, /action:options\.applyAnswer \? 'apply_answer_to_current_plan'/);
+  assert.match(html, /options\.selectionContext \? 'edit_selected_text'/);
+  assert.match(html, /selection_context:options\.selectionContext/);
+  assert.match(html, /id="aiSelectionTrigger"[^>]*hidden>问 AI<\/button>/);
+  assert.match(html, /id="aiSelectionQuote"[^>]*hidden/);
+  assert.match(html, /function captureAISelection\(\)/);
   assert.match(html, /answer_context:options\.answerContext/);
   assert.match(html, /pendingAIAction = \{\.\.\.payload\.proposal,targetIndex:options\.targetIndex\};\s*executePendingAIAction\(\)/);
   assert.match(html, /修改内容：\$\{escapeHTML\(proposal\.summary\)\}/);
