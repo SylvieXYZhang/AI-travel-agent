@@ -26,7 +26,7 @@
         repeating-linear-gradient(8deg,rgba(82,65,43,.018) 0,rgba(82,65,43,.018) 1px,transparent 1px,transparent 7px),
         var(--canvas);
     }
-    button,input { font:inherit; }
+    button,input,textarea { font:inherit; }
     button { color:inherit; }
     .app { width:min(100%,1000px); min-height:100vh; margin:auto; padding:30px 26px 70px; }
     .topbar { position:relative; z-index:50; display:grid; grid-template-columns:64px 1fr 104px; align-items:center; min-height:150px; }
@@ -67,6 +67,8 @@
     .book::after { inset:12px -14px -12px 13px; z-index:-1; background:#ddd2be; transform:rotate(.65deg); }
     .paper { position:relative; z-index:5; min-height:1260px; padding:62px 82px 58px; border:1px solid rgba(101,82,56,.16); border-radius:4px; background-color:var(--paper); background-image:radial-gradient(circle at 20% 8%,rgba(255,255,255,.6),transparent 35%),radial-gradient(circle at 88% 85%,rgba(126,94,47,.06),transparent 34%),repeating-linear-gradient(5deg,rgba(77,62,41,.018) 0,rgba(77,62,41,.018) 1px,transparent 1px,transparent 6px); box-shadow:0 12px 32px rgba(67,52,33,.18),inset 0 0 36px rgba(105,78,38,.04); transition:opacity .16s ease,transform .2s ease; }
     .paper.changing { opacity:.2; transform:translateY(8px); }
+    .edit-plan-button { position:absolute; top:28px; right:30px; z-index:2; min-height:38px; padding:8px 14px; border:1px solid rgba(45,112,86,.35); border-radius:999px; color:var(--green); background:rgba(248,244,233,.88); font:700 12px ui-sans-serif,"PingFang SC",sans-serif; cursor:pointer; }
+    .edit-plan-button:hover { background:#e8eee4; }
     .entry-date { margin:0 0 28px; color:var(--green); font-size:17px; font-weight:650; letter-spacing:.05em; }
     .entry-title { margin:0; font-size:clamp(31px,4.7vw,48px); font-weight:600; line-height:1.25; letter-spacing:.035em; }
     .entry-kicker { margin:12px 0 27px; color:#969087; font-size:18px; letter-spacing:.08em; }
@@ -78,6 +80,12 @@
     .section li,.section p { margin:7px 0; font-size:14px; line-height:1.72; letter-spacing:.045em; }
     .route-row { display:grid; grid-template-columns:28px 1fr; gap:10px; align-items:start; }
     .route-row span:first-child { font-family:ui-sans-serif,sans-serif; font-size:18px; text-align:center; }
+    .stay-subtitle { margin:16px 0 8px; color:#6f665b; font-size:13px; font-weight:800; letter-spacing:.08em; }
+    .stay-subtitle:first-child { margin-top:0; }
+    .daily-stay-row { display:grid; grid-template-columns:minmax(58px,auto) 1fr auto; gap:10px; align-items:center; padding:10px 12px; border-radius:9px; background:rgba(106,143,108,.08); }
+    .daily-stay-row + .daily-stay-row { margin-top:8px; }
+    .daily-stay-day { color:var(--green); font-weight:800; }
+    .daily-stay-price { padding:3px 8px; border-radius:999px; color:#765b43; background:#efe2d1; font-weight:800; white-space:nowrap; }
     .quote { margin:18px 0 0; padding:17px 22px; border-radius:9px; color:var(--green); background:rgba(106,143,108,.1); font-size:15px; line-height:1.8; text-align:center; letter-spacing:.06em; }
     .quote::before,.quote::after { content:'“'; margin:0 10px; font-size:27px; font-weight:800; vertical-align:-4px; }
     .quote::after { content:'”'; }
@@ -138,8 +146,38 @@
     .api-status.loading { color:#72593f; background:#f2e8da; }
     .api-config-form { display:grid; gap:14px; margin-top:18px; }
     .api-config-form label { display:grid; gap:6px; color:#5d5042; font-size:12px; font-weight:700; }
-    .api-config-form input,.api-config-form select { box-sizing:border-box; width:100%; min-height:44px; padding:9px 11px; border:1px solid #d3c4b1; border-radius:10px; outline:0; color:#3f372f; background:#fffdf8; font:13px ui-sans-serif,"PingFang SC",sans-serif; }
-    .api-config-form input:focus,.api-config-form select:focus { border-color:#a67f59; box-shadow:0 0 0 3px rgba(166,127,89,.12); }
+    .api-config-form input,.api-config-form select,.api-config-form textarea { box-sizing:border-box; width:100%; min-height:44px; padding:9px 11px; border:1px solid #d3c4b1; border-radius:10px; outline:0; color:#3f372f; background:#fffdf8; font:13px ui-sans-serif,"PingFang SC",sans-serif; }
+    .api-config-form textarea { min-height:92px; resize:vertical; line-height:1.55; }
+    .api-config-form input:focus,.api-config-form select:focus,.api-config-form textarea:focus { border-color:#a67f59; box-shadow:0 0 0 3px rgba(166,127,89,.12); }
+    .inline-editor-toolbar[hidden] { display:none; }
+    .inline-editor-toolbar { position:sticky; top:10px; z-index:12; display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:-34px -48px 28px; padding:10px 12px; border:1px solid #d8c9b6; border-radius:12px; background:rgba(250,247,239,.97); box-shadow:0 10px 26px rgba(55,43,29,.16); font-family:ui-sans-serif,"PingFang SC",sans-serif; }
+    .inline-editor-toolbar button,.inline-upload-label,.editor-menu summary { min-height:34px; box-sizing:border-box; padding:6px 10px; border:1px solid #cfbea7; border-radius:8px; color:#5d4e3e; background:#f8f1e6; font-size:12px; font-weight:700; cursor:pointer; }
+    .inline-editor-toolbar button:hover,.inline-upload-label:hover,.editor-menu summary:hover { background:#eee1cf; }
+    .inline-editor-toolbar input[type="url"] { min-width:180px; flex:1; min-height:34px; padding:6px 9px; border:1px solid #cfbea7; border-radius:8px; background:white; font-size:12px; }
+    .inline-upload-label input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+    .editor-menu { position:relative; }
+    .editor-menu summary { display:flex; align-items:center; gap:5px; list-style:none; user-select:none; }
+    .editor-menu summary::-webkit-details-marker { display:none; }
+    .editor-menu[open] summary { border-color:#9f8262; background:#eee1cf; }
+    .editor-menu-panel { position:absolute; top:calc(100% + 7px); left:0; z-index:20; display:flex; flex-wrap:wrap; gap:7px; width:min(430px,calc(100vw - 54px)); padding:10px; border:1px solid #d2c1ac; border-radius:10px; background:#fffaf2; box-shadow:0 12px 28px rgba(55,43,29,.2); }
+    .color-menu-panel { width:190px; }
+    .editor-color-button { width:28px; min-height:28px !important; padding:0 !important; border-radius:50% !important; background:var(--editor-color) !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.55); }
+    .editor-color-button:hover,.editor-color-button:focus-visible { transform:scale(1.1); outline:2px solid #8f765a; outline-offset:1px; }
+    .insert-menu-panel input[type="url"] { flex-basis:100%; }
+    .inline-editor-status { flex-basis:100%; min-height:18px; color:#765f49; font-size:11px; }
+    .inline-editor-actions[hidden] { display:none; }
+    .inline-editor-actions { position:sticky; top:82px; z-index:11; display:flex; justify-content:flex-end; gap:10px; margin:-18px -48px 28px; padding:10px 12px; border-radius:12px; background:rgba(250,247,239,.94); box-shadow:0 8px 22px rgba(55,43,29,.12); font-family:ui-sans-serif,"PingFang SC",sans-serif; }
+    .inline-editor-actions button { min-height:42px; padding:9px 18px; border:1px solid #cbb9a1; border-radius:999px; color:#665542; background:#f7efe3; font-size:13px; font-weight:800; cursor:pointer; }
+    .inline-editor-actions .save { min-width:112px; border-color:var(--green); color:white; background:var(--green); box-shadow:0 7px 16px rgba(45,112,86,.22); }
+    .inline-editor-actions .save:hover { background:#245f48; }
+    .inline-editor-actions .cancel:hover { background:#eadfce; }
+    .paper.editing { outline:3px solid rgba(45,112,86,.16); outline-offset:5px; }
+    .editable-region[contenteditable="true"] { border-radius:5px; outline:1px dashed rgba(45,112,86,.36); outline-offset:5px; cursor:text; }
+    .editable-region[contenteditable="true"]:focus { outline:2px solid rgba(45,112,86,.55); background:rgba(255,255,255,.35); }
+    .editable-region img { display:block; max-width:100%; height:auto; margin:14px auto; border-radius:8px; }
+    .editable-region a { color:#285f83; text-decoration:underline; text-underline-offset:2px; }
+    .editable-region table { width:100%; margin:14px 0; border-collapse:collapse; background:rgba(255,255,255,.38); }
+    .editable-region th,.editable-region td { min-width:70px; padding:8px; border:1px solid rgba(72,66,57,.35); vertical-align:top; }
     .api-search-lock { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 12px; border:1px solid #ddd1c1; border-radius:10px; color:#5f5345; background:#f6f0e6; font-size:12px; }
     .api-search-lock span:last-child { color:#3e7259; font-weight:800; }
     .api-config-note { margin:0; color:#827363; font-size:11px; line-height:1.6; }
@@ -166,6 +204,9 @@
       .record-nav { top:48px; font-size:13px; }
       .book { width:calc(100% - 32px); min-height:100dvh; }
       .paper { min-height:100dvh; height:auto; padding:48px 30px 88px; }
+      .edit-plan-button { top:16px; right:18px; }
+      .inline-editor-toolbar { position:relative; top:auto; margin:-24px -10px 24px; }
+      .inline-editor-actions { position:relative; top:auto; margin:-14px -10px 24px; }
       .tab-rail { top:0; bottom:auto; z-index:40; width:128px; height:auto; display:block; pointer-events:auto; }
       .tab-rail.left { left:0; right:auto; align-items:flex-start; }
       .tab-rail.right { left:auto; right:0; align-items:flex-end; }
@@ -225,15 +266,51 @@
       </div>
       <div class="book">
         <article class="paper" id="paper" aria-live="polite">
-          <p class="entry-date" id="entryDate"></p>
-          <h2 class="entry-title" id="entryTitle"></h2>
-          <p class="entry-kicker" id="entryKicker"></p>
-          <p class="entry-intro" id="entryIntro"></p>
-          <section class="section"><h3>I. 行程概览</h3><ul id="overviewList"></ul></section>
-          <section class="section"><h3>II. 必去清单</h3><ul id="highlightList"></ul></section>
-          <section class="section"><h3>III. 路线与交通</h3><div id="routeList"></div></section>
-          <section class="section"><h3>IV. 美食计划</h3><div id="foodList"></div></section>
-          <section class="section"><h3>V. 行李与准备</h3><p id="packingText"></p><blockquote class="quote" id="quoteText"></blockquote></section>
+          <button class="edit-plan-button" id="editPlanButton" type="button">编辑行程</button>
+          <div class="inline-editor-toolbar" id="inlineEditorToolbar" hidden>
+            <button type="button" data-editor-command="bold" aria-label="加粗">粗体</button>
+            <button type="button" data-editor-command="italic" aria-label="斜体">斜体</button>
+            <details class="editor-menu" id="textColorMenu">
+              <summary>文字颜色</summary>
+              <div class="editor-menu-panel color-menu-panel" aria-label="选择文字颜色">
+                <button class="editor-color-button" type="button" data-editor-color="#2f2a25" style="--editor-color:#2f2a25" aria-label="墨黑" title="墨黑"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#6b7280" style="--editor-color:#6b7280" aria-label="灰色" title="灰色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#b42318" style="--editor-color:#b42318" aria-label="红色" title="红色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#c2410c" style="--editor-color:#c2410c" aria-label="橙色" title="橙色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#a16207" style="--editor-color:#a16207" aria-label="金色" title="金色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#2e7d32" style="--editor-color:#2e7d32" aria-label="绿色" title="绿色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#0f766e" style="--editor-color:#0f766e" aria-label="青色" title="青色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#2563eb" style="--editor-color:#2563eb" aria-label="蓝色" title="蓝色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#7c3aed" style="--editor-color:#7c3aed" aria-label="紫色" title="紫色"></button>
+                <button class="editor-color-button" type="button" data-editor-color="#be185d" style="--editor-color:#be185d" aria-label="粉色" title="粉色"></button>
+              </div>
+            </details>
+            <details class="editor-menu" id="insertMenu">
+              <summary>插入</summary>
+              <div class="editor-menu-panel insert-menu-panel">
+                <input id="inlineUrlInput" type="url" maxlength="2000" placeholder="粘贴 https:// 链接或图片地址">
+                <button type="button" id="insertLinkButton">插入链接</button>
+                <button type="button" id="insertImageUrlButton">网络图片</button>
+                <label class="inline-upload-label">本地图片<input id="inlineImageUpload" type="file" accept="image/png,image/jpeg,image/gif,image/webp"></label>
+                <button type="button" id="insertTableButton">插入 2×3 表格</button>
+              </div>
+            </details>
+            <span class="inline-editor-status" id="inlineEditorStatus" role="status" aria-live="polite"></span>
+          </div>
+          <div class="inline-editor-actions" id="inlineEditorActions" hidden>
+            <button class="cancel" type="button" id="cancelInlineEdit">取消</button>
+            <button class="save" type="button" id="saveInlineEdit">保存修改</button>
+          </div>
+          <p class="entry-date editable-region" id="entryDate"></p>
+          <h2 class="entry-title editable-region" id="entryTitle"></h2>
+          <p class="entry-kicker editable-region" id="entryKicker"></p>
+          <p class="entry-intro editable-region" id="entryIntro"></p>
+          <section class="section"><h3>I. 行程概览</h3><ul class="editable-region" id="overviewList"></ul></section>
+          <section class="section"><h3>II. 必去清单</h3><ul class="editable-region" id="highlightList"></ul></section>
+          <section class="section"><h3>III. 路线与交通</h3><div class="editable-region" id="routeList"></div></section>
+          <section class="section"><h3>IV. 美食计划</h3><div class="editable-region" id="foodList"></div></section>
+          <section class="section"><h3>V. 住宿安排</h3><h4 class="stay-subtitle">住宿推荐</h4><ul class="editable-region" id="accommodationList"></ul><h4 class="stay-subtitle">每日住宿与价格区间</h4><div class="editable-region" id="dailyStayList"></div></section>
+          <section class="section"><h3>VI. 行李与准备</h3><p class="editable-region" id="packingText"></p><blockquote class="quote editable-region" id="quoteText"></blockquote></section>
           <div class="position-dots" id="positionDots" aria-hidden="true"></div>
         </article>
       </div>
@@ -272,7 +349,7 @@
 
   <script>
     const destinations = [
-      {city:'京都',color:'#ead0af',date:'2024年5月18日',title:'初夏の京都5日行程计划',kicker:'慢茶、古寺、町家与山间小路',intro:'这是我期待已久的京都之旅。想在初夏的微风里，走进古老的街巷，喝一碗抹茶，听一场雨落在屋檐上。以下是这趟旅程的计划与准备，记录出发前的每一个细节。',overview:['Day 1｜抵达京都 · 祇园散步 · 花见小路 · 鸭川夜景','Day 2｜清水寺 · 二年坂三年坂 · 伏见稻荷大社','Day 3｜岚山竹林 · 嵯峨野小火车 · 天龙寺','Day 4｜哲学之道 · 银阁寺 · 南禅寺 · 蹴上倾斜铁道','Day 5｜锦市场 · 平安神宫 · 返程'],highlights:['清水寺：清晨前往，避开人潮，感受山寺的宁静。','伏见稻荷大社：走到千本鸟居尽头，俯瞰整个京都。','岚山竹林小径：光影斑驳，记得带上广角镜头。','锦市场：体验在地美食与手信，推荐玉子烧与抹茶甜点。'],routes:['🚆|机场 → 京都站：HARUKA 特急约 75 分钟直达。','▣|市内交通：购买巴士一日券，主要景点基本覆盖。','⌁|步行为主：许多小巷与寺院之间，步行最能感受京都。'],food:['上午：茶屋抹茶、和果子','午餐：汤豆腐、荞麦面、鳗鱼饭','晚餐：怀石料理或居酒屋小酌','推荐：% Arabica、茶寮宝泉、顺正汤豆腐'],packing:'轻便为主，舒适的鞋子与雨具必备。相机、充电器、转换插头、交通卡（ICOCA）。5月天气多变，薄外套与晴雨两用伞放进行李侧袋。',quote:'旅行的意义，不只是到达一个地方，而是在路上，遇见更好的自己。'},
+      {city:'京都',color:'#ead0af',date:'2024年5月18日',title:'初夏の京都5日行程计划',kicker:'慢茶、古寺、町家与山间小路',intro:'这是我期待已久的京都之旅。想在初夏的微风里，走进古老的街巷，喝一碗抹茶，听一场雨落在屋檐上。以下是这趟旅程的计划与准备，记录出发前的每一个细节。',overview:['Day 1｜抵达京都 · 祇园散步 · 花见小路 · 鸭川夜景','Day 2｜清水寺 · 二年坂三年坂 · 伏见稻荷大社','Day 3｜岚山竹林 · 嵯峨野小火车 · 天龙寺','Day 4｜哲学之道 · 银阁寺 · 南禅寺 · 蹴上倾斜铁道','Day 5｜锦市场 · 平安神宫 · 返程'],highlights:['清水寺：清晨前往，避开人潮，感受山寺的宁静。','伏见稻荷大社：走到千本鸟居尽头，俯瞰整个京都。','岚山竹林小径：光影斑驳，记得带上广角镜头。','锦市场：体验在地美食与手信，推荐玉子烧与抹茶甜点。'],routes:['🚆|机场 → 京都站：HARUKA 特急约 75 分钟直达。','▣|市内交通：购买巴士一日券，主要景点基本覆盖。','⌁|步行为主：许多小巷与寺院之间，步行最能感受京都。'],food:['上午：茶屋抹茶、和果子','午餐：汤豆腐、荞麦面、鳗鱼饭','晚餐：怀石料理或居酒屋小酌','推荐：% Arabica、茶寮宝泉、顺正汤豆腐'],accommodation:['京都站周边：交通方便，适合抵达与返程日。','祇园/东山：步行可达古街与寺院，适合体验町家氛围。','四条河原町：餐饮购物集中，夜间出行方便。'],daily_stays:['Day 1｜京都站周边商务酒店｜人民币 ¥700–1,100/晚','Day 2｜祇园町家旅宿｜人民币 ¥1,000–1,800/晚','Day 3｜祇园町家旅宿｜人民币 ¥1,000–1,800/晚','Day 4｜四条河原町精品酒店｜人民币 ¥900–1,500/晚','Day 5｜返程日，不安排住宿｜人民币 ¥0'],packing:'轻便为主，舒适的鞋子与雨具必备。相机、充电器、转换插头、交通卡（ICOCA）。5月天气多变，薄外套与晴雨两用伞放进行李侧袋。',quote:'旅行的意义，不只是到达一个地方，而是在路上，遇见更好的自己。'},
       {city:'伊斯坦布尔',color:'#dbe4b2',title:'横跨欧亚的海峡漫游',kicker:'清真寺、香料市场与博斯普鲁斯海风'},
       {city:'清迈',color:'#d9d3e7',title:'清迈慢生活四日记',kicker:'古城晨光、山寺与热带夜市'},
       {city:'阿那亚',color:'#edc9cc',title:'海边社区周末散步',kicker:'礼堂、孤独图书馆与落日晚风'},
@@ -294,17 +371,183 @@
       highlights:['从城市最具代表性的街区开始，先建立方向感。','把热门景点安排在清晨或傍晚，避开人流。','至少留半天不排计划，让旅程自然发生。','选择一家当地市场，认识真正的日常味道。'],
       routes:['✈|抵达：优先选择公共交通进入市中心。','▣|市内：步行结合地铁，减少往返折线。','⌁|节奏：每天只安排一个重点区域。'],
       food:['早餐：本地面包与咖啡','午餐：市场或街区小馆','晚餐：提前预订一家代表性餐厅','随身：水、坚果与当地水果'],
+      accommodation:['市中心交通枢纽附近：换乘方便，适合首次到访。','核心街区：步行可达餐厅与主要景点。','特色社区旅宿：适合体验当地生活，但需确认夜间交通。'],
+      daily_stays:['Day 1｜市中心交通型酒店｜人民币 ¥500–900/晚','Day 2｜市中心交通型酒店｜人民币 ¥500–900/晚','Day 3｜特色街区旅宿｜人民币 ¥600–1,000/晚','Day 4｜返程日，不安排住宿｜人民币 ¥0'],
       packing:'轻装、舒适步行鞋、薄外套、充电设备和可重复使用的水瓶。提前下载离线地图，并保存住宿与交通信息。',
       quote:'好旅程不是打卡更多，而是记住更多。'
     };
+    const PLAN_STORAGE_KEY = 'travel-plans-v1';
+    const DEFAULT_CURRENCY = { code:'CNY', label:'人民币', symbol:'¥' };
+    function deduplicateDestinations() {
+      const seen = new Set();
+      const unique = destinations.filter(item => {
+        const key = String(item?.city || '').normalize('NFKC').replace(/\s+/g,'').toLocaleLowerCase('zh-CN');
+        if (!key || seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      destinations.splice(0,destinations.length,...unique);
+    }
+    function restoreTravelPlans() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || 'null');
+        if (!Array.isArray(saved) || !saved.length) return;
+        const valid = saved.filter(item => item && typeof item === 'object' && typeof item.city === 'string' && item.city.trim());
+        if (valid.length) destinations.splice(0,destinations.length,...valid);
+      } catch {}
+    }
+    function persistTravelPlans() {
+      try {
+        localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(destinations));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    restoreTravelPlans();
+    deduplicateDestinations();
     const initialDestinationCount = destinations.length;
     let active = 0;
     let pendingAIAction = null;
+    let lastAIResponse = null;
     let touchStartX = null;
     const $ = selector => document.querySelector(selector);
     const paper = $('#paper');
 
     function dataFor(index) { return {...fallback,...destinations[index]}; }
+    const RICH_SECTION_SELECTORS = {
+      date:'#entryDate', title:'#entryTitle', kicker:'#entryKicker', intro:'#entryIntro', overview:'#overviewList',
+      highlights:'#highlightList', routes:'#routeList', food:'#foodList', accommodation:'#accommodationList', daily_stays:'#dailyStayList', packing:'#packingText', quote:'#quoteText'
+    };
+    const EDITOR_TEXT_COLORS = new Set(['#2f2a25','#6b7280','#b42318','#c2410c','#a16207','#2e7d32','#0f766e','#2563eb','#7c3aed','#be185d']);
+    const EDITOR_RGB_COLORS = new Map(['47,42,37','107,114,128','180,35,24','194,65,12','161,98,7','46,125,50','15,118,110','37,99,235','124,58,237','190,24,93'].map((rgb,index) => [rgb,[...EDITOR_TEXT_COLORS][index]]));
+    const ALLOWED_EDITOR_CLASSES = new Set(['route-row','daily-stay-row','daily-stay-day','daily-stay-price']);
+    const ALLOWED_EDITOR_TAGS = new Set(['A','B','BR','DIV','EM','FONT','I','IMG','LI','OL','P','SPAN','STRONG','TABLE','TBODY','TD','TH','THEAD','TR','U','UL']);
+    let savedEditorRange = null;
+    function safeEditorURL(value,allowDataImage = false) {
+      const text = String(value || '').trim();
+      if (allowDataImage && /^data:image\/(?:png|jpeg|gif|webp);base64,/i.test(text)) return text;
+      try { const url = new URL(text); return ['http:','https:'].includes(url.protocol) ? url.href : null; }
+      catch { return null; }
+    }
+    function sanitizeRichHTML(value) {
+      const template = document.createElement('template');
+      template.innerHTML = String(value || '');
+      for (const element of [...template.content.querySelectorAll('*')]) {
+        if (['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','FORM'].includes(element.tagName)) { element.remove(); continue; }
+        if (!ALLOWED_EDITOR_TAGS.has(element.tagName)) { element.replaceWith(...element.childNodes); continue; }
+        const href = element.tagName === 'A' ? safeEditorURL(element.getAttribute('href')) : null;
+        const src = element.tagName === 'IMG' ? safeEditorURL(element.getAttribute('src'),true) : null;
+        const alt = element.tagName === 'IMG' ? String(element.getAttribute('alt') || '').slice(0,200) : '';
+        const safeClasses = [...element.classList].filter(name => ALLOWED_EDITOR_CLASSES.has(name));
+        const colorValue = element.tagName === 'FONT' || element.tagName === 'SPAN' ? String(element.getAttribute('color') || element.style.color || '').toLowerCase().trim() : '';
+        const rgbMatch = colorValue.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        const safeColor = EDITOR_TEXT_COLORS.has(colorValue) ? colorValue : EDITOR_RGB_COLORS.get(rgbMatch?.slice(1,4).join(','));
+        for (const attribute of [...element.attributes]) element.removeAttribute(attribute.name);
+        if (element.tagName === 'A') {
+          if (!href) { element.replaceWith(...element.childNodes); continue; }
+          element.href = href; element.target = '_blank'; element.rel = 'noopener noreferrer';
+        }
+        if (element.tagName === 'IMG') {
+          if (!src) { element.remove(); continue; }
+          element.src = src; element.alt = alt; element.loading = 'lazy';
+        }
+        if (safeClasses.length) element.className = safeClasses.join(' ');
+        if (safeColor) element.style.color = safeColor;
+      }
+      return template.innerHTML;
+    }
+    function rememberEditorSelection() {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+      if (container?.closest?.('.editable-region[contenteditable="true"]')) savedEditorRange = range.cloneRange();
+    }
+    function restoreEditorSelection() {
+      if (!savedEditorRange) {
+        const target = $('#entryIntro');
+        target.focus();
+        savedEditorRange = document.createRange();
+        savedEditorRange.selectNodeContents(target);
+        savedEditorRange.collapse(false);
+      }
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(savedEditorRange);
+      return savedEditorRange;
+    }
+    function insertEditorNode(node) {
+      const range = restoreEditorSelection();
+      range.deleteContents();
+      range.insertNode(node);
+      range.setStartAfter(node); range.collapse(true);
+      savedEditorRange = range.cloneRange();
+      restoreEditorSelection();
+    }
+    function insertEditorHTML(html) {
+      const template = document.createElement('template');
+      template.innerHTML = sanitizeRichHTML(html);
+      const fragment = template.content;
+      const last = fragment.lastChild;
+      const range = restoreEditorSelection();
+      range.deleteContents(); range.insertNode(fragment);
+      if (last) { range.setStartAfter(last); range.collapse(true); savedEditorRange = range.cloneRange(); }
+    }
+    function setInlineEditorStatus(message) { $('#inlineEditorStatus').textContent = message || ''; }
+    function startInlineEditing() {
+      paper.classList.add('editing');
+      $('#editPlanButton').hidden = true;
+      $('#inlineEditorToolbar').hidden = false;
+      $('#inlineEditorActions').hidden = false;
+      document.querySelectorAll('.editable-region').forEach(element => element.setAttribute('contenteditable','true'));
+      setInlineEditorStatus('直接点击页面文字即可修改。');
+      $('#entryTitle').focus();
+      rememberEditorSelection();
+    }
+    function stopInlineEditing() {
+      paper.classList.remove('editing');
+      $('#editPlanButton').hidden = false;
+      $('#inlineEditorToolbar').hidden = true;
+      $('#inlineEditorActions').hidden = true;
+      $('#textColorMenu').open = false;
+      $('#insertMenu').open = false;
+      document.querySelectorAll('.editable-region').forEach(element => element.removeAttribute('contenteditable'));
+      savedEditorRange = null;
+    }
+    function cancelInlineEditing() { stopInlineEditing(); renderEntry(); $('#editPlanButton').focus(); }
+    function textItems(container,selector) {
+      const items = [...container.querySelectorAll(selector)].map(item => item.textContent.trim()).filter(Boolean).slice(0,30);
+      return items.length ? items : (container.textContent.trim() ? [container.textContent.trim()] : []);
+    }
+    function saveInlineEditing() {
+      const item = destinations[active];
+      if (!item) return;
+      const richSections = {};
+      for (const [field,selector] of Object.entries(RICH_SECTION_SELECTORS)) {
+        const element = $(selector);
+        element.innerHTML = sanitizeRichHTML(element.innerHTML);
+        richSections[field] = element.innerHTML;
+      }
+      const routeRows = [...$('#routeList').querySelectorAll('.route-row')].map(row => {
+        const parts = row.querySelectorAll('span');
+        return parts.length > 1 ? `${parts[0].textContent.trim()}|${parts[1].textContent.trim()}` : row.textContent.trim();
+      }).filter(Boolean);
+      const dailyStayRows = [...$('#dailyStayList').querySelectorAll('p')].map(row => {
+        const parts = [...row.querySelectorAll(':scope > span')].map(part => part.textContent.trim()).filter(Boolean);
+        return parts.length >= 3 ? `${parts[0]}｜${parts[1]}｜${parts.slice(2).join('｜')}` : row.textContent.trim();
+      }).filter(Boolean);
+      Object.assign(item,{
+        date:$('#entryDate').textContent.trim(), title:$('#entryTitle').textContent.trim(), kicker:$('#entryKicker').textContent.trim(),
+        intro:$('#entryIntro').textContent.trim(), overview:textItems($('#overviewList'),'li'), highlights:textItems($('#highlightList'),'li'),
+        routes:routeRows.length ? routeRows : textItems($('#routeList'),'p'), food:textItems($('#foodList'),'p'),
+        accommodation:textItems($('#accommodationList'),'li'), daily_stays:dailyStayRows.length ? dailyStayRows : textItems($('#dailyStayList'),'p'),
+        packing:$('#packingText').textContent.trim(), quote:$('#quoteText').textContent.trim(), richSections
+      });
+      if (!persistTravelPlans()) { setInlineEditorStatus('保存失败：内容可能过大，请减少本地图片后重试。'); return; }
+      stopInlineEditing(); renderEntry();
+      const button = $('#editPlanButton'); button.textContent = '已保存';
+      setTimeout(() => { button.textContent = '编辑行程'; },1400);
+    }
     function renderTabs() {
       const left = $('#leftTabList');
       const right = $('#rightTabList');
@@ -350,6 +593,13 @@
       if (!event.target.closest('.tab-rail')) closeTabRails();
     });
     function fillList(selector,items) { $(selector).innerHTML = items.map(item => `<li>${escapeHTML(item)}</li>`).join(''); }
+    function renderDailyStays(items) {
+      $('#dailyStayList').innerHTML = items.map(item => {
+        const [day,stay,...priceParts] = String(item).split('｜');
+        const price = priceParts.join('｜');
+        return `<p class="daily-stay-row"><span class="daily-stay-day">${escapeHTML(day || '')}</span><span>${escapeHTML(stay || '')}</span><span class="daily-stay-price">${escapeHTML(price || '价格待确认')}</span></p>`;
+      }).join('');
+    }
     function renderEntry() {
       const data = dataFor(active);
       $('#entryDate').textContent = data.date;
@@ -360,8 +610,15 @@
       fillList('#highlightList',data.highlights);
       $('#routeList').innerHTML = data.routes.map(row => { const [icon,text] = row.split('|'); return `<p class="route-row"><span>${escapeHTML(icon)}</span><span>${escapeHTML(text || '')}</span></p>`; }).join('');
       $('#foodList').innerHTML = data.food.map(item => `<p>• ${escapeHTML(item)}</p>`).join('');
+      fillList('#accommodationList',data.accommodation);
+      renderDailyStays(data.daily_stays);
       $('#packingText').textContent = data.packing;
       $('#quoteText').textContent = data.quote;
+      if (data.richSections && typeof data.richSections === 'object') {
+        for (const [field,selector] of Object.entries(RICH_SECTION_SELECTORS)) {
+          if (typeof data.richSections[field] === 'string') $(selector).innerHTML = sanitizeRichHTML(data.richSections[field]);
+        }
+      }
       $('#positionDots').innerHTML = destinations.map((_,index) => `<span class="${index === active ? 'active' : ''}"></span>`).join('');
       renderTabs();
     }
@@ -461,6 +718,7 @@
       catch { return null; }
     }
     function renderAIResult(response) {
+      lastAIResponse = response;
       const message = `<p>${escapeHTML(response.assistant_message).replace(/\n/g,'<br>')}</p>`;
       const results = (response.results || []).slice(0,5).map(result => {
         const details = (result.details || []).slice(0,4).map(item => `<span>• ${escapeHTML(item)}</span>`).join('');
@@ -479,12 +737,17 @@
         showAIResponse(`${message}<p><em>${escapeHTML(response.proposal.summary)}</em></p><p>确认后才会写入页面。</p>${sourceHTML}${warnings}<div class="ai-actions"><button class="ai-action primary" type="button" data-ai-action="confirm">确认执行</button><button class="ai-action" type="button" data-ai-action="cancel">取消</button></div>`);
         return;
       }
-      showAIResponse(`${message}${results ? `<div class="ai-results">${results}</div>` : ''}${sourceHTML}${warnings}`);
+      const canModifyPlan = response.intent === 'answer_question' && (response.results || []).length > 0;
+      const modifyPlan = canModifyPlan
+        ? `<div class="ai-actions"><button class="ai-action primary" type="button" data-ai-action="modify-from-answer">根据回答修改行程</button></div>`
+        : '';
+      showAIResponse(`${message}${results ? `<div class="ai-results">${results}</div>` : ''}${sourceHTML}${warnings}${modifyPlan}`);
     }
-    async function askTravelAI(query) {
+    async function askTravelAI(query,options = {}) {
       const send = $('#aiSend');
       send.disabled = true;
       pendingAIAction = null;
+      if (!options.applyAnswer) lastAIResponse = null;
       const stopProgress = startAIProgress();
       try {
         const response = await fetch('/api/ai/chat',{
@@ -495,6 +758,8 @@
             conversation:aiConversation.slice(-12),
             profile:JSON.parse(localStorage.getItem('travel-profile') || '{}'),
             current_plan:{id:`destination-${active}`,...dataFor(active)},
+            action:options.applyAnswer ? 'apply_answer_to_current_plan' : undefined,
+            answer_context:options.answerContext || undefined,
             locale:document.documentElement.lang || 'zh-CN',
             timezone:Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
           })
@@ -503,7 +768,13 @@
         if (!response.ok) throw new Error(payload.error?.message || 'AI 服务暂时不可用。');
         aiConversation.push({role:'user',content:query},{role:'assistant',content:payload.assistant_message});
         if (aiConversation.length > 24) aiConversation.splice(0,aiConversation.length - 24);
-        renderAIResult(payload);
+        if (options.applyAnswer) {
+          if (payload.intent !== 'modify_current' || !payload.requires_confirmation || !payload.proposal) throw new Error('AI 未能生成可应用的行程修改。');
+          pendingAIAction = {...payload.proposal,targetIndex:options.targetIndex};
+          executePendingAIAction();
+        } else {
+          renderAIResult(payload);
+        }
       } catch (error) {
         showAIResponse(`<p>${escapeHTML(error.message || '无法连接到 AI 服务。')}</p><div class="ai-warning">联网检索不会降级。请检查模型配置或稍后重试。</div><div class="ai-actions"><button class="ai-action" type="button" data-ai-action="config">检查 LLM 配置</button></div>`);
       } finally {
@@ -517,6 +788,30 @@
       const duration = patch.duration_days || proposal.duration_days || null;
       return {...patch,duration_days:duration};
     }
+    function planPatchChangesItem(item,patch) {
+      const fields = ['title','kicker','intro','overview','highlights','routes','food','accommodation','daily_stays','packing','quote'];
+      return fields.some(field => patch[field] !== null && patch[field] !== undefined
+        && JSON.stringify(patch[field]) !== JSON.stringify(item[field]));
+    }
+    async function modifyPlanFromAnswer(response) {
+      if (!response?.results?.length) return;
+      const targetIndex = active;
+      const answerContext = {
+        assistant_message:response.assistant_message,
+        results:response.results,
+        citations:response.citations || []
+      };
+      await askTravelAI('根据上一轮 AI 回答中的新建议，重新规划当前城市的完整行程。保留未受影响的信息。',{
+        applyAnswer:true,
+        answerContext,
+        targetIndex
+      });
+    }
+    function buildDailyStays(city,duration) {
+      return Array.from({length:duration},(_,index) => index === duration - 1
+        ? `Day ${index + 1}｜返程日，不安排住宿｜${DEFAULT_CURRENCY.label} ${DEFAULT_CURRENCY.symbol}0`
+        : `Day ${index + 1}｜${city}交通便利区域住宿｜${DEFAULT_CURRENCY.label}价格待检索`);
+    }
     function executePendingAIAction() {
       if (!pendingAIAction) return;
       const proposal = pendingAIAction;
@@ -524,23 +819,35 @@
       const patch = normalizedPlanPatch(proposal);
       if (proposal.operation === 'modify_current') {
         const item = destinations[proposal.targetIndex];
-        const fields = ['title','kicker','intro','overview','highlights','food','packing','quote'];
+        if (!item || !planPatchChangesItem(item,patch)) {
+          showAIResponse('<p>AI 没有生成与原行程不同的内容，本次未写入页面。请再次点击生成。</p>');
+          return;
+        }
+        const fields = ['title','kicker','intro','overview','highlights','food','accommodation','daily_stays','packing','quote'];
         if (patch.destination) item.city = patch.destination;
-        fields.forEach(field => { if (patch[field] !== null && patch[field] !== undefined) item[field] = patch[field]; });
+        fields.forEach(field => {
+          if (patch[field] !== null && patch[field] !== undefined) {
+            item[field] = patch[field];
+            if (item.richSections) delete item.richSections[field];
+          }
+        });
+        if (patch.routes && item.richSections) delete item.richSections.routes;
         if (patch.routes) item.routes = patch.routes.map(row => row.includes('|') ? row : `⌁|${row}`);
         if (patch.duration_days && !patch.overview) item.overview = buildOverview(item.city,patch.duration_days,patch.waypoint);
         if (patch.duration_days && !patch.title) item.title = `${item.city}${patch.duration_days}日旅行计划`;
         active = proposal.targetIndex;
+        persistTravelPlans();
         renderEntry();
-        showAIResponse(`<p>已更新 <em>${escapeHTML(item.city)}</em> 的当前旅行记录。</p>`);
+        showAIResponse(`<p>已更新 <em>${escapeHTML(item.city)}</em> 的当前旅行记录。</p>${proposal.summary ? `<p><em>修改内容：${escapeHTML(proposal.summary)}</em></p>` : ''}`);
         return;
       }
       if (proposal.operation === 'create_plan') {
         const city = proposal.destination || patch.destination || '新旅程';
         const duration = patch.duration_days || 5;
-        const newItem = {city,color:planColors[destinations.length % planColors.length],date:'AI 新建旅行计划',title:patch.title || `${city}${duration}日旅行计划`,kicker:patch.kicker || `${duration}日旅行规划 · AI 检索生成`,intro:patch.intro || `这是一份为${city}准备的${duration}天旅行计划。`,overview:patch.overview || buildOverview(city,duration,patch.waypoint),highlights:patch.highlights || [...fallback.highlights],routes:(patch.routes || fallback.routes).map(row => row.includes('|') ? row : `⌁|${row}`),food:patch.food || [...fallback.food],packing:patch.packing || fallback.packing,quote:patch.quote || fallback.quote};
+        const newItem = {city,color:planColors[destinations.length % planColors.length],date:'AI 新建旅行计划',title:patch.title || `${city}${duration}日旅行计划`,kicker:patch.kicker || `${duration}日旅行规划 · AI 检索生成`,intro:patch.intro || `这是一份为${city}准备的${duration}天旅行计划。`,overview:patch.overview || buildOverview(city,duration,patch.waypoint),highlights:patch.highlights || [...fallback.highlights],routes:(patch.routes || fallback.routes).map(row => row.includes('|') ? row : `⌁|${row}`),food:patch.food || [...fallback.food],accommodation:patch.accommodation || [...fallback.accommodation],daily_stays:patch.daily_stays || buildDailyStays(city,duration),packing:patch.packing || fallback.packing,quote:patch.quote || fallback.quote};
         destinations.push(newItem);
         active = destinations.length - 1;
+        persistTravelPlans();
         renderEntry();
         showAIResponse(`<p>已创建 <em>${escapeHTML(city)}</em> 的新旅行记录，并切换到新页面。</p>`);
         return;
@@ -555,7 +862,7 @@
     $('#nextButton').addEventListener('click',() => select(active + 1));
     document.addEventListener('keydown',event => {
       if (event.key === 'Escape') closeTabRails();
-      if (event.target.matches('input')) return;
+      if (event.target.matches('input,textarea,select') || event.target.isContentEditable) return;
       if (event.key === 'ArrowLeft') select(active - 1);
       if (event.key === 'ArrowRight') select(active + 1);
     });
@@ -623,12 +930,92 @@
     $('#apiDialogClose').addEventListener('click',closeLLMConfig);
     $('#apiModal').addEventListener('click',event => { if (event.target.matches('[data-api-close]')) closeLLMConfig(); });
     document.addEventListener('keydown',event => { if (event.key === 'Escape' && !$('#apiModal').hidden) closeLLMConfig(); });
+    $('#editPlanButton').addEventListener('click',startInlineEditing);
+    $('#saveInlineEdit').addEventListener('click',saveInlineEditing);
+    $('#cancelInlineEdit').addEventListener('click',cancelInlineEditing);
+    for (const menu of document.querySelectorAll('.editor-menu')) {
+      menu.addEventListener('toggle',() => {
+        if (menu.open) document.querySelectorAll('.editor-menu').forEach(other => { if (other !== menu) other.open = false; });
+      });
+    }
+    document.addEventListener('selectionchange',rememberEditorSelection);
+    $('#inlineEditorToolbar').addEventListener('click',event => {
+      const command = event.target.closest('[data-editor-command]')?.dataset.editorCommand;
+      const color = event.target.closest('[data-editor-color]')?.dataset.editorColor;
+      if (!command && !color) return;
+      restoreEditorSelection();
+      if (command) document.execCommand(command,false,null);
+      if (EDITOR_TEXT_COLORS.has(color)) {
+        document.execCommand('styleWithCSS',false,true);
+        document.execCommand('foreColor',false,color);
+        $('#textColorMenu').open = false;
+        setInlineEditorStatus('文字颜色已设置，保存后生效。');
+      }
+      rememberEditorSelection();
+    });
+    $('#insertLinkButton').addEventListener('click',() => {
+      const url = safeEditorURL($('#inlineUrlInput').value);
+      if (!url) { setInlineEditorStatus('请输入有效的 http:// 或 https:// 链接。'); return; }
+      const range = restoreEditorSelection();
+      if (range.collapsed) {
+        const link = document.createElement('a'); link.href = url; link.textContent = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; insertEditorNode(link);
+      } else {
+        document.execCommand('createLink',false,url);
+      }
+      $('#insertMenu').open = false;
+      setInlineEditorStatus('链接已插入，保存后生效。');
+    });
+    $('#insertImageUrlButton').addEventListener('click',() => {
+      const url = safeEditorURL($('#inlineUrlInput').value);
+      if (!url) { setInlineEditorStatus('请输入有效的网络图片地址。'); return; }
+      const image = document.createElement('img'); image.src = url; image.alt = '行程图片'; image.loading = 'lazy'; insertEditorNode(image);
+      $('#insertMenu').open = false;
+      setInlineEditorStatus('网络图片已插入，保存后生效。');
+    });
+    $('#inlineImageUpload').addEventListener('change',event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      if (!/^image\/(?:png|jpeg|gif|webp)$/i.test(file.type) || file.size > 1024 * 1024) {
+        setInlineEditorStatus('本地图片须为 PNG/JPEG/GIF/WebP，且不超过 1 MB。'); event.target.value = ''; return;
+      }
+      const reader = new FileReader();
+      reader.addEventListener('load',() => {
+        const image = document.createElement('img'); image.src = reader.result; image.alt = file.name.slice(0,120); insertEditorNode(image);
+        $('#insertMenu').open = false;
+        setInlineEditorStatus('本地图片已插入，保存后生效。'); event.target.value = '';
+      });
+      reader.readAsDataURL(file);
+    });
+    $('#insertTableButton').addEventListener('click',() => {
+      const table = document.createElement('table');
+      const body = document.createElement('tbody');
+      for (let rowIndex = 0; rowIndex < 2; rowIndex += 1) {
+        const row = document.createElement('tr');
+        for (let columnIndex = 0; columnIndex < 3; columnIndex += 1) {
+          const cell = document.createElement(rowIndex ? 'td' : 'th');
+          cell.textContent = rowIndex ? '填写内容' : `列 ${columnIndex + 1}`; row.appendChild(cell);
+        }
+        body.appendChild(row);
+      }
+      table.appendChild(body); insertEditorNode(table); $('#insertMenu').open = false; setInlineEditorStatus('表格已插入，可直接修改单元格。');
+    });
+    paper.addEventListener('paste',event => {
+      if (!event.target.closest('.editable-region[contenteditable="true"]')) return;
+      event.preventDefault();
+      const html = event.clipboardData.getData('text/html');
+      const text = event.clipboardData.getData('text/plain');
+      insertEditorHTML(html || escapeHTML(text).replace(/\r?\n/g,'<br>'));
+    });
+    document.addEventListener('keydown',event => {
+      if (event.key === 'Escape' && paper.classList.contains('editing')) cancelInlineEditing();
+    });
     $('#aiResponse').addEventListener('click',async event => {
       const button = event.target.closest('[data-ai-action]');
       if (!button) return;
       const action = button.dataset.aiAction;
       if (action === 'confirm') executePendingAIAction();
       if (action === 'cancel') { pendingAIAction = null; showAIResponse('<p>已取消，本次没有修改任何旅行记录。</p>'); }
+      if (action === 'modify-from-answer') await modifyPlanFromAnswer(lastAIResponse);
       if (action === 'choose') await askTravelAI(`请为${button.dataset.city}创建一份旅行计划`);
       if (action === 'config') await showLLMConfig();
       if (action === 'dismiss-response') $('#aiResponse').classList.remove('show');
