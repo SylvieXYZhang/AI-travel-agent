@@ -1,3 +1,31 @@
+# Secrets and local configuration
 .env
-.env.local
+.env.*
+!.env.example
+
+# Dependencies, caches, and editor files
+node_modules/
+.npm/
+.cache/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local agent state
+.agents/
+.codex/
+.azcli-temp/
+
+# Runtime and preview output
 *.log
+tmp/
+coverage/
+contact-sheet.*
+
+# Private deployment material and downloaded diagnostics
+infra/
+scripts/deploy-azure.ps1
+deploy*.zip
+appservice-logs/
+appservice-logs*.zip
