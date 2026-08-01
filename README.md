@@ -60,14 +60,14 @@ VoyageAI 是一款面向中文旅行者的 AI 旅行规划 Demo。你只需要�
 
 ### 环境要求
 
-- Node.js 18+
+- Node.js 20+
 - 一个兼容 OpenAI Responses API 的模型服务与 API Key
 
 ### 1. 获取代码
 
 ```bash
-git clone https://github.com/SylvieXYZhang/AI-travel-agent.git
-cd AI-travel-agent
+git clone https://github.com/SylvieXYZhang/VoyageAI.git
+cd VoyageAI
 ```
 
 ### 2. 配置模型
@@ -88,7 +88,7 @@ $env:LLM_BASE_URL="https://your-provider.example.com/v1"
 $env:LLM_MODEL="your-model"
 ```
 
-API Key 只由本地 Node.js 服务读取，不会发送到浏览器或写入前端文件。启动后，也可以从左上角菜单进入“API 设置”，在当前服务进程中保存并测试配置。
+启动后从左上角菜单注册或登录账号，再进入“模型 API 设置”。每个账号拥有独立配置；API Key 只提交到服务端，经 AES-256-GCM 加密后保存，不会返回浏览器或写入前端文件。本地无 Cosmos DB 时账号数据仅保存在当前进程，适合开发测试。
 
 ### 3. 启动
 
@@ -113,10 +113,43 @@ XHS_DETAIL_LIMIT=3
 
 当问题提到小红书，或涉及住宿/酒店时，后端会尝试读取相关图文笔记作为证据。服务未启用、登录过期或超时时，会改用公开 Web Search，并提示覆盖范围可能不完整。请在遵守平台条款、适用法律和上游项目许可的前提下使用。
 
+## 分享旅行规划
+
+在任意旅行手账中点击“分享”，即可创建两种链接：
+
+- **只读链接**：好友只能浏览这一份规划。
+- **可编辑链接**：好友可以直接修改并保存到同一份云端规划。
+
+可编辑链接中的密钥位于 URL `#edit=` 片段，不会随页面请求或来源信息发送。任何拿到该链接的人都具有编辑权限，请只分享给信任的人。多人同时保存时，应用会阻止过期版本覆盖新修改，并提示刷新最新版。
+
+本地未配置持久化存储时，分享 API 使用进程内存，仅供开发测试；服务重启后分享会消失。生产环境可配置兼容的数据存储。
+
+## 公开体验与自托管
+
+公开体验可以使用维护者在服务端配置的模型额度。浏览器只能调用本站 `/api/ai/chat`，无法读取模型 Key、模型服务的 Authorization Header 或宿主平台凭据。
+
+```text
+PUBLIC_DEMO_ENABLED=true
+PUBLIC_DEMO_RATE_LIMIT_PER_MINUTE=3
+PUBLIC_DEMO_DAILY_LIMIT=100
+```
+
+这三个变量必须由部署平台注入，不要写入前端文件。公开模式默认关闭；打开后匿名访客可以直接体验 AI 功能。内置限额适合单实例 Demo，正式公开运营还应在网关或模型供应商侧配置预算上限、告警和持久化限流。
+
+通用部署要求：Node.js 20、HTTPS、持久化数据存储，以及以下仅服务端可见的 Secret：
+
+- `LLM_API_KEY`
+- `ACCOUNT_ENCRYPTION_KEY`
+- 数据存储的工作负载身份或连接凭据
+
+本仓库不包含维护者的云资源模板、订阅信息、部署日志和生产环境变量。你可以使用任意支持 Node.js 的托管平台部署自己的实例。
+
 ## 数据与隐私
 
-- API Key 留在本地服务端；通过设置页面提交的 Key 仅保存在当前 Node.js 进程内存中。
+- 密码使用 scrypt 单向哈希；登录会话使用 `HttpOnly`、`SameSite=Lax` Cookie。
+- 每个账号的模型 API Key 使用服务端 `ACCOUNT_ENCRYPTION_KEY` 加密后保存，接口只返回“是否已配置”。
 - 旅行手账、旅行偏好和头像保存在当前浏览器的 `localStorage` 中，不会同步到云端。
+- 用户主动分享的单页规划会保存到配置的数据存储；只读链接公开可读，可编辑链接持有者可修改。
 - 本地图片会写入浏览器存储；图片过大时可能触及浏览器容量限制。
 - AI 的旅行建议仅供规划参考。预订、签证、开放时间、价格与交通信息请以原始来源为准。
 
@@ -126,7 +159,7 @@ XHS_DETAIL_LIMIT=3
 
 - 专用地图、地点距离和路线优化；
 - 酒店实时库存、实时价格或直接预订；
-- 账号系统、云端同步、分享与多人协作；
+- 完整的邮箱验证、找回密码、MFA，以及个人旅行手账的账号级云端同步；
 - 跨设备数据迁移和版本历史。
 
 ## 技术概览
@@ -136,6 +169,12 @@ XHS_DETAIL_LIMIT=3
 - OpenAI Responses API、JSON Schema 结构化输出和 Web Search
 - 可选小红书只读检索与公开搜索降级
 - 服务端输入校验、响应校验、超时、请求大小限制和基础限流
+
+## 参与贡献
+
+欢迎提交 Issue 和 Pull Request。开始前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请按 [SECURITY.md](SECURITY.md) 私下报告，不要在公开 Issue 中粘贴密钥、日志或部署信息。
+
+本项目采用 [MIT License](LICENSE)。
 
 <details>
 <summary><strong>测试与开发命令</strong></summary>

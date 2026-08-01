@@ -2,6 +2,7 @@
   "name": "ai-travel-agent-demo",
   "version": "0.2.0",
   "private": true,
+  "license": "MIT",
   "description": "Travel planner demo with a server-side LLM and web-search workflow",
   "scripts": {
     "start": "node server.cjs",
@@ -10,6 +11,10 @@
     "smoke:batch": "node scripts/smoke-batch.cjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.3.0",
+    "@azure/identity": "^4.11.1"
   }
 }

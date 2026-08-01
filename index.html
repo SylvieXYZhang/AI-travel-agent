@@ -67,8 +67,10 @@
     .book::after { inset:12px -14px -12px 13px; z-index:-1; background:#ddd2be; transform:rotate(.65deg); }
     .paper { position:relative; z-index:5; min-height:1260px; padding:62px 82px 58px; border:1px solid rgba(101,82,56,.16); border-radius:4px; background-color:var(--paper); background-image:radial-gradient(circle at 20% 8%,rgba(255,255,255,.6),transparent 35%),radial-gradient(circle at 88% 85%,rgba(126,94,47,.06),transparent 34%),repeating-linear-gradient(5deg,rgba(77,62,41,.018) 0,rgba(77,62,41,.018) 1px,transparent 1px,transparent 6px); box-shadow:0 12px 32px rgba(67,52,33,.18),inset 0 0 36px rgba(105,78,38,.04); transition:opacity .16s ease,transform .2s ease; }
     .paper.changing { opacity:.2; transform:translateY(8px); }
-    .edit-plan-button { position:absolute; top:28px; right:30px; z-index:2; min-height:38px; padding:8px 14px; border:1px solid rgba(45,112,86,.35); border-radius:999px; color:var(--green); background:rgba(248,244,233,.88); font:700 12px ui-sans-serif,"PingFang SC",sans-serif; cursor:pointer; }
-    .edit-plan-button:hover { background:#e8eee4; }
+    .paper-actions { position:absolute; top:28px; right:30px; z-index:2; display:flex; align-items:center; gap:8px; }
+    .paper-action-button { min-height:38px; padding:8px 14px; border:1px solid rgba(45,112,86,.35); border-radius:999px; color:var(--green); background:rgba(248,244,233,.88); font:700 12px ui-sans-serif,"PingFang SC",sans-serif; cursor:pointer; }
+    .paper-action-button:hover { background:#e8eee4; }
+    .share-mode-badge { display:none; padding:7px 10px; border-radius:999px; color:#765b43; background:#efe2d1; font:700 11px ui-sans-serif,"PingFang SC",sans-serif; }
     .entry-date { margin:0 0 28px; color:var(--green); font-size:17px; font-weight:650; letter-spacing:.05em; }
     .entry-title { margin:0; font-size:clamp(31px,4.7vw,48px); font-weight:600; line-height:1.25; letter-spacing:.035em; }
     .entry-kicker { margin:12px 0 27px; color:#969087; font-size:18px; letter-spacing:.08em; }
@@ -78,6 +80,38 @@
     .section h3 { margin:0 0 13px; color:var(--green); font-size:21px; font-weight:600; letter-spacing:.08em; }
     .section ul { margin:0; padding-left:20px; }
     .section li,.section p { margin:7px 0; font-size:14px; line-height:1.72; letter-spacing:.045em; }
+    .highlight-carousel { position:relative; margin:0 -8px; padding:0 8px; }
+    .highlight-grid { display:grid; grid-auto-flow:column; grid-auto-columns:78%; gap:13px; margin:0!important; padding:0 0 10px!important; overflow-x:auto; overflow-y:hidden; list-style:none; scroll-behavior:smooth; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-inline:contain; touch-action:pan-x pan-y; }
+    .highlight-grid::-webkit-scrollbar { display:none; }
+    .highlight-card { position:relative; min-width:0; height:440px; margin:0!important; overflow:hidden; isolation:isolate; border-radius:17px; color:white; background-color:#506a5c; background-image:var(--highlight-image); background-position:center; background-size:cover; box-shadow:0 10px 22px rgba(48,39,28,.18); scroll-snap-align:start; scroll-snap-stop:always; }
+    .highlight-card::after { content:""; position:absolute; inset:0; z-index:1; background:linear-gradient(180deg,rgba(12,18,15,.02) 20%,rgba(12,18,15,.18) 55%,rgba(10,16,13,.88) 100%); pointer-events:none; }
+    .highlight-grid .highlight-card img { position:absolute; inset:0; width:100%; height:100%; max-width:none; margin:0!important; border-radius:0; object-fit:cover; transition:transform .45s ease,filter .25s ease; }
+    .highlight-grid .highlight-card img[hidden] { display:none!important; }
+    .highlight-grid .highlight-card:hover img { transform:scale(1.045); }
+    .highlight-card-image-state { position:absolute; inset:0; z-index:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:24px; color:rgba(255,255,255,.86); background:linear-gradient(145deg,#587064,#334a40); font:600 13px/1.5 ui-sans-serif,"PingFang SC",sans-serif; letter-spacing:.04em; text-align:center; }
+    .highlight-image-retry { position:relative; z-index:3; padding:8px 14px; border:1px solid rgba(255,255,255,.5); border-radius:999px; color:#fff; background:rgba(255,255,255,.14); font:700 12px/1.2 ui-sans-serif,"PingFang SC",sans-serif; cursor:pointer; backdrop-filter:blur(8px); }
+    .highlight-image-retry:hover { background:rgba(255,255,255,.24); }
+    .highlight-image-retry:disabled { cursor:wait; opacity:.65; }
+    .highlight-card-copy { position:absolute; right:0; bottom:0; left:0; z-index:2; display:grid; gap:5px; padding:32px 17px 16px; text-shadow:0 2px 8px rgba(0,0,0,.62); }
+    .highlight-card-title { font-size:19px; font-weight:800; line-height:1.25; letter-spacing:.04em; }
+    .highlight-card-description { display:-webkit-box; overflow:hidden; color:rgba(255,255,255,.9); font:12px/1.55 ui-sans-serif,"PingFang SC",sans-serif; letter-spacing:.025em; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+    .highlight-grid[contenteditable="true"] { outline-offset:8px; }
+    .highlight-grid[contenteditable="true"] .highlight-card { outline:1px dashed rgba(255,255,255,.72); outline-offset:-7px; }
+    .highlight-grid[contenteditable="true"] .highlight-card img { pointer-events:none; }
+    .highlight-nav { position:absolute; top:50%; z-index:4; width:38px; height:38px; display:grid; place-items:center; padding:0 0 2px; border:1px solid rgba(255,255,255,.75); border-radius:50%; color:white; background:rgba(27,32,28,.58); box-shadow:0 5px 14px rgba(25,22,18,.24); font:25px/1 ui-sans-serif,sans-serif; cursor:pointer; transform:translateY(-65%); backdrop-filter:blur(7px); }
+    .highlight-nav:hover { background:rgba(31,39,34,.8); }
+    .highlight-nav:disabled { opacity:0; pointer-events:none; }
+    .highlight-nav.previous { left:-4px; }
+    .highlight-nav.next { right:-4px; }
+    .highlight-carousel-meta { display:flex; align-items:center; justify-content:space-between; min-height:20px; margin-top:2px; color:#8b7c6b; font:11px ui-sans-serif,"PingFang SC",sans-serif; }
+    .highlight-carousel-meta::before { content:'左右滑动查看更多'; letter-spacing:.06em; }
+    .highlight-position { min-width:42px; text-align:right; font-variant-numeric:tabular-nums; }
+    .ai-suggestions { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; padding-top:11px; border-top:1px dotted rgba(104,87,65,.24); }
+    .ai-suggestions::before { content:'灵光一闪'; width:100%; color:#9a8064; font:700 10px ui-sans-serif,"PingFang SC",sans-serif; letter-spacing:.12em; }
+    .ai-suggestion { min-height:32px; padding:6px 10px; border:1px solid #d4c4af; border-radius:999px; color:#6c5946; background:rgba(250,246,237,.82); font:700 11px ui-sans-serif,"PingFang SC",sans-serif; cursor:pointer; }
+    .ai-suggestion:hover { border-color:#ad8c68; color:#4f4032; background:#f0e5d5; }
+    .ai-suggestion:disabled { opacity:.5; cursor:wait; }
+    .paper.editing .ai-suggestions,body.shared-mode .ai-suggestions { display:none; }
     .route-row { display:grid; grid-template-columns:28px 1fr; gap:10px; align-items:start; }
     .route-row span:first-child { font-family:ui-sans-serif,sans-serif; font-size:18px; text-align:center; }
     .stay-subtitle { margin:16px 0 8px; color:#6f665b; font-size:13px; font-weight:800; letter-spacing:.08em; }
@@ -183,6 +217,22 @@
     .api-config-note { margin:0; color:#827363; font-size:11px; line-height:1.6; }
     .api-dialog-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:9px; margin-top:2px; }
     .api-dialog-actions button:disabled { opacity:.55; cursor:wait; }
+    .auth-form { display:grid; gap:14px; margin-top:20px; }
+    .auth-form label { display:grid; gap:7px; color:#5d5042; font-size:12px; font-weight:700; }
+    .auth-form input { width:100%; min-height:43px; padding:9px 11px; border:1px solid #d3c4b1; border-radius:10px; outline:none; color:#55493d; background:#fffdf8; font:14px ui-sans-serif,"PingFang SC",sans-serif; }
+    .auth-switch { display:flex; justify-content:center; gap:6px; color:#827363; font:12px ui-sans-serif,"PingFang SC",sans-serif; }
+    .auth-switch button { padding:0; border:0; color:var(--green); background:transparent; font-weight:800; cursor:pointer; }
+    .menu-account { margin-top:8px; border-top:1px solid #e2d7c7!important; color:var(--green); font-weight:800; }
+    .share-form { display:grid; gap:15px; margin-top:20px; }
+    .share-field { display:grid; gap:7px; color:#5d5042; font-size:12px; font-weight:700; }
+    .share-field-row { display:flex; gap:8px; }
+    .share-field input { min-width:0; flex:1; min-height:42px; padding:8px 10px; border:1px solid #d3c4b1; border-radius:10px; color:#55493d; background:#fffdf8; font:12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .share-copy { flex:0 0 auto; padding:8px 13px; border:1px solid #bca98f; border-radius:10px; color:#5f5142; background:#f5ecdf; font-size:12px; font-weight:800; cursor:pointer; }
+    .share-help { margin:0; color:#817361; font-size:11px; line-height:1.6; }
+    body.shared-mode .topbar > .icon-button,body.shared-mode .top-actions,body.shared-mode .menu-panel,body.shared-mode .search-panel,body.shared-mode .record-nav,body.shared-mode .tab-rail,body.shared-mode .position-dots,body.shared-mode .ai-dock,body.shared-mode .ai-selection-trigger,body.shared-mode #sharePlanButton { display:none!important; }
+    body.shared-mode .topbar { grid-template-columns:1fr; }
+    body.shared-mode .share-mode-badge { display:inline-flex; }
+    body.shared-mode .journal-stage { margin-top:0; }
     .ai-composer { width:64px; height:64px; display:flex; align-items:center; overflow:hidden; border:1px solid rgba(255,255,255,.82); border-radius:999px; background:#ba9873; box-shadow:0 13px 30px rgba(48,38,25,.25); transition:width .42s cubic-bezier(.2,.75,.2,1),background .2s ease; }
     .ai-composer.open { width:min(360px,calc(100vw - 36px)); background:#faf7ef; }
     .ai-toggle { position:relative; flex:0 0 64px; width:64px; height:64px; padding:0; border:2px solid white; border-radius:50%; color:white; background:transparent; cursor:pointer; touch-action:manipulation; transition:transform .25s ease,color .2s ease,border-color .2s ease; }
@@ -212,7 +262,7 @@
       .record-nav { top:48px; font-size:13px; }
       .book { width:calc(100% - 32px); min-height:100dvh; }
       .paper { min-height:100dvh; height:auto; padding:48px 30px 88px; }
-      .edit-plan-button { top:16px; right:18px; }
+      .paper-actions { top:16px; right:18px; }
       .inline-editor-toolbar { position:relative; top:auto; margin:-24px -10px 24px; }
       .inline-editor-actions { position:relative; top:auto; margin:-14px -10px 24px; }
       .tab-rail { top:0; bottom:auto; z-index:40; width:128px; height:auto; display:block; pointer-events:auto; }
@@ -229,6 +279,9 @@
       .city-tab:hover,.right .city-tab:hover { transform:none; }
       .entry-title { font-size:30px; }
       .entry-intro { font-size:14px; }
+      .highlight-card { height:380px; }
+      .highlight-card-copy { padding:28px 14px 14px; }
+      .highlight-card-title { font-size:17px; }
       .search-panel { right:0; }
       .ai-dock { right:max(16px,env(safe-area-inset-right)); bottom:max(22px,env(safe-area-inset-bottom)); }
     }
@@ -244,6 +297,13 @@
       .entry-title { font-size:26px; }
       .entry-kicker { font-size:15px; }
       .section li,.section p { font-size:13px; }
+      .highlight-carousel { margin:0 -4px; padding:0 4px; }
+      .highlight-grid { grid-auto-columns:86%; gap:10px; }
+      .highlight-card { height:320px; border-radius:14px; }
+      .highlight-card-copy { padding:26px 12px 12px; }
+      .highlight-card-title { font-size:15px; }
+      .highlight-card-description { font-size:11px; -webkit-line-clamp:2; }
+      .highlight-nav { width:34px; height:34px; font-size:22px; }
     }
     @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition-duration:.01ms!important; } }
   </style>
@@ -257,7 +317,7 @@
         <button class="icon-button search-button" id="searchButton" aria-label="搜索城市" aria-expanded="false"><svg class="search-icon" viewBox="0 0 28 28" aria-hidden="true"><circle cx="12" cy="12" r="7.5"></circle><path d="m17.5 17.5 6 6"></path><path d="M9.4 8.8c1.5-1.2 3.9-1.3 5.5-.2" opacity=".38"></path></svg></button>
         <label class="profile" aria-label="更换用户头像"><span class="profile-fallback" id="profileFallback">ME</span><img id="profilePhoto" alt="用户头像" hidden><input id="profileUpload" type="file" accept="image/*"></label>
       </div>
-      <nav class="menu-panel" id="menuPanel" aria-label="主菜单"><button>旅行手账</button><button>收藏地点</button><button>个人偏好</button><button id="apiSettingsButton" type="button">API 设置</button></nav>
+      <nav class="menu-panel" id="menuPanel" aria-label="主菜单"><button>旅行手账</button><button>收藏地点</button><button>个人偏好</button><button id="apiSettingsButton" type="button" hidden>模型 API 设置</button><button class="menu-account" id="accountButton" type="button">登录 / 注册</button><button id="logoutButton" type="button" hidden>退出登录</button></nav>
       <form class="search-panel" id="searchPanel"><input id="searchInput" aria-label="输入城市名称" placeholder="搜索城市…"></form>
     </header>
 
@@ -274,7 +334,11 @@
       </div>
       <div class="book">
         <article class="paper" id="paper" aria-live="polite">
-          <button class="edit-plan-button" id="editPlanButton" type="button">编辑行程</button>
+          <div class="paper-actions" id="paperActions">
+            <span class="share-mode-badge" id="shareModeBadge">共享行程</span>
+            <button class="paper-action-button" id="sharePlanButton" type="button">分享</button>
+            <button class="paper-action-button" id="editPlanButton" type="button">编辑行程</button>
+          </div>
           <div class="inline-editor-toolbar" id="inlineEditorToolbar" hidden>
             <button type="button" data-editor-command="bold" aria-label="加粗">粗体</button>
             <button type="button" data-editor-command="italic" aria-label="斜体">斜体</button>
@@ -313,17 +377,33 @@
           <h2 class="entry-title editable-region" id="entryTitle"></h2>
           <p class="entry-kicker editable-region" id="entryKicker"></p>
           <p class="entry-intro editable-region" id="entryIntro"></p>
-          <section class="section"><h3>I. 行程概览</h3><ul class="editable-region" id="overviewList"></ul></section>
-          <section class="section"><h3>II. 必去清单</h3><ul class="editable-region" id="highlightList"></ul></section>
-          <section class="section"><h3>III. 路线与交通</h3><div class="editable-region" id="routeList"></div></section>
-          <section class="section"><h3>IV. 美食计划</h3><div class="editable-region" id="foodList"></div></section>
-          <section class="section"><h3>V. 住宿安排</h3><h4 class="stay-subtitle">住宿推荐</h4><ul class="editable-region" id="accommodationList"></ul><h4 class="stay-subtitle">每日住宿与价格区间</h4><div class="editable-region" id="dailyStayList"></div></section>
-          <section class="section"><h3>VI. 行李与准备</h3><p class="editable-region" id="packingText"></p><blockquote class="quote editable-region" id="quoteText"></blockquote></section>
+          <section class="section"><h3>I. 行程概览</h3><ul class="editable-region" id="overviewList"></ul><div class="ai-suggestions" data-ai-module="行程概览" data-ai-fields="overview"><button class="ai-suggestion" type="button">列出详细的日程规划表</button><button class="ai-suggestion" type="button">调整每天的行程节奏</button><button class="ai-suggestion" type="button">增加每天的时间安排</button></div></section>
+          <section class="section"><h3>II. 必去清单</h3><div class="highlight-carousel"><button class="highlight-nav previous" id="highlightPrevious" type="button" aria-label="上一个景点">‹</button><ul class="editable-region highlight-grid" id="highlightList" aria-label="必去景点卡片"></ul><button class="highlight-nav next" id="highlightNext" type="button" aria-label="下一个景点">›</button><div class="highlight-carousel-meta"><span class="highlight-position" id="highlightPosition" aria-live="polite"></span></div></div><div class="ai-suggestions" data-ai-module="必去清单" data-ai-fields="highlights"><button class="ai-suggestion" type="button">换一批景点</button><button class="ai-suggestion" type="button">加入几个小众景点</button><button class="ai-suggestion" type="button">减少需要排队的景点</button></div></section>
+          <section class="section"><h3>III. 路线与交通</h3><div class="editable-region" id="routeList"></div><div class="ai-suggestions" data-ai-module="路线与交通" data-ai-fields="routes"><button class="ai-suggestion" type="button">帮我规划好路线</button><button class="ai-suggestion" type="button">减少折返和通勤时间</button><button class="ai-suggestion" type="button">优先安排公共交通</button></div></section>
+          <section class="section"><h3>IV. 美食计划</h3><div class="editable-region" id="foodList"></div><div class="ai-suggestions" data-ai-module="美食计划" data-ai-fields="food"><button class="ai-suggestion" type="button">换一批美食</button><button class="ai-suggestion" type="button">加入本地人常去的餐厅</button><button class="ai-suggestion" type="button">按每天路线安排用餐</button></div></section>
+          <section class="section"><h3>V. 住宿安排</h3><h4 class="stay-subtitle">住宿推荐</h4><ul class="editable-region" id="accommodationList"></ul><h4 class="stay-subtitle">每日住宿与价格区间</h4><div class="editable-region" id="dailyStayList"></div><div class="ai-suggestions" data-ai-module="住宿安排" data-ai-fields="accommodation,daily_stays"><button class="ai-suggestion" type="button">住宿预算过高，帮我降低</button><button class="ai-suggestion" type="button">住宿预算过低，帮我升级</button><button class="ai-suggestion" type="button">换到交通更方便的区域</button></div></section>
+          <section class="section"><h3>VI. 行李与准备</h3><p class="editable-region" id="packingText"></p><blockquote class="quote editable-region" id="quoteText"></blockquote><div class="ai-suggestions" data-ai-module="行李与准备" data-ai-fields="packing,quote"><button class="ai-suggestion" type="button">按天气补充行李清单</button><button class="ai-suggestion" type="button">精简不必要的物品</button><button class="ai-suggestion" type="button">补充出发前注意事项</button></div></section>
           <div class="position-dots" id="positionDots" aria-hidden="true"></div>
         </article>
       </div>
     </section>
   </main>
+  <div class="api-modal" id="authModal" hidden>
+    <div class="api-modal-backdrop" data-auth-close></div>
+    <section class="api-dialog" role="dialog" aria-modal="true" aria-labelledby="authDialogTitle">
+      <header class="api-dialog-header">
+        <div><h2 id="authDialogTitle">登录 VoyageAI</h2><p id="authDialogSubtitle">登录后可保存当前账号专属的模型配置。</p></div>
+        <button class="api-dialog-close" id="authDialogClose" type="button" aria-label="关闭账号窗口">×</button>
+      </header>
+      <div class="api-status" id="authStatus" role="status" aria-live="polite" hidden></div>
+      <form class="auth-form" id="authForm">
+        <label>邮箱<input id="authEmail" name="email" type="email" maxlength="254" autocomplete="email" required></label>
+        <label>密码<input id="authPassword" name="password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required></label>
+        <button class="ai-action primary" id="authSubmit" type="submit">登录</button>
+        <div class="auth-switch"><span id="authSwitchText">还没有账号？</span><button id="authSwitchButton" type="button">创建账号</button></div>
+      </form>
+    </section>
+  </div>
   <div class="api-modal" id="apiModal" hidden>
     <div class="api-modal-backdrop" data-api-close></div>
     <section class="api-dialog" role="dialog" aria-modal="true" aria-labelledby="apiDialogTitle">
@@ -337,13 +417,32 @@
         <label>Base URL<input id="apiBaseUrlInput" name="base_url" type="url" maxlength="300" required></label>
         <label>模型<input id="apiModelInput" name="model" type="text" maxlength="100" required placeholder="填写模型名称，例如 doubao-seed-2.1-turbo"></label>
         <div class="api-search-lock"><span>Web Search 联网检索</span><span>始终开启</span></div>
-        <p class="api-config-note">API Key 仅保存在当前本地 Node 进程内存中，不写入 HTML、浏览器存储或接口响应。服务重启后会重新读取服务端 `.env`。</p>
+        <p class="api-config-note">配置与当前登录账号绑定。API Key 经服务端加密后保存，不写入 HTML、浏览器存储或接口响应。</p>
         <div class="api-dialog-actions">
           <button class="ai-action" type="button" data-api-close>取消</button>
           <button class="ai-action" type="submit" value="save">仅保存</button>
           <button class="ai-action primary" type="submit" value="test">保存并测试</button>
         </div>
       </form>
+    </section>
+  </div>
+  <div class="api-modal" id="shareModal" hidden>
+    <div class="api-modal-backdrop" data-share-close></div>
+    <section class="api-dialog" role="dialog" aria-modal="true" aria-labelledby="shareDialogTitle">
+      <header class="api-dialog-header">
+        <div><h2 id="shareDialogTitle">分享这份旅行规划</h2><p>只读链接适合浏览；可编辑链接请只发给信任的好友。</p></div>
+        <button class="api-dialog-close" id="shareDialogClose" type="button" aria-label="关闭分享窗口">×</button>
+      </header>
+      <div class="api-status" id="shareStatus" role="status" aria-live="polite" hidden></div>
+      <div class="share-form" id="shareLinks" hidden>
+        <label class="share-field">只读链接
+          <span class="share-field-row"><input id="readShareUrl" readonly><button class="share-copy" type="button" data-copy-share="read">复制</button></span>
+        </label>
+        <label class="share-field">可编辑链接
+          <span class="share-field-row"><input id="editShareUrl" readonly><button class="share-copy" type="button" data-copy-share="edit">复制</button></span>
+        </label>
+        <p class="share-help">任何获得可编辑链接的人都可以修改规划。分享链接长期有效，修改后刷新即可查看最新版。</p>
+      </div>
     </section>
   </div>
   <button class="ai-selection-trigger" id="aiSelectionTrigger" type="button" hidden>问 AI</button>
@@ -359,26 +458,47 @@
 
   <script>
     const destinations = [
-      {city:'京都',color:'#ead0af',date:'2024年5月18日',title:'初夏の京都5日行程计划',kicker:'慢茶、古寺、町家与山间小路',intro:'这是我期待已久的京都之旅。想在初夏的微风里，走进古老的街巷，喝一碗抹茶，听一场雨落在屋檐上。以下是这趟旅程的计划与准备，记录出发前的每一个细节。',overview:['Day 1｜抵达京都 · 祇园散步 · 花见小路 · 鸭川夜景','Day 2｜清水寺 · 二年坂三年坂 · 伏见稻荷大社','Day 3｜岚山竹林 · 嵯峨野小火车 · 天龙寺','Day 4｜哲学之道 · 银阁寺 · 南禅寺 · 蹴上倾斜铁道','Day 5｜锦市场 · 平安神宫 · 返程'],highlights:['清水寺：清晨前往，避开人潮，感受山寺的宁静。','伏见稻荷大社：走到千本鸟居尽头，俯瞰整个京都。','岚山竹林小径：光影斑驳，记得带上广角镜头。','锦市场：体验在地美食与手信，推荐玉子烧与抹茶甜点。'],routes:['🚆|机场 → 京都站：HARUKA 特急约 75 分钟直达。','▣|市内交通：购买巴士一日券，主要景点基本覆盖。','⌁|步行为主：许多小巷与寺院之间，步行最能感受京都。'],food:['上午：茶屋抹茶、和果子','午餐：汤豆腐、荞麦面、鳗鱼饭','晚餐：怀石料理或居酒屋小酌','推荐：% Arabica、茶寮宝泉、顺正汤豆腐'],accommodation:['京都站周边：交通方便，适合抵达与返程日。','祇园/东山：步行可达古街与寺院，适合体验町家氛围。','四条河原町：餐饮购物集中，夜间出行方便。'],daily_stays:['Day 1｜京都站周边商务酒店｜人民币 ¥700–1,100/晚','Day 2｜祇园町家旅宿｜人民币 ¥1,000–1,800/晚','Day 3｜祇园町家旅宿｜人民币 ¥1,000–1,800/晚','Day 4｜四条河原町精品酒店｜人民币 ¥900–1,500/晚','Day 5｜返程日，不安排住宿｜人民币 ¥0'],packing:'轻便为主，舒适的鞋子与雨具必备。相机、充电器、转换插头、交通卡（ICOCA）。5月天气多变，薄外套与晴雨两用伞放进行李侧袋。',quote:'旅行的意义，不只是到达一个地方，而是在路上，遇见更好的自己。'},
-      {city:'伊斯坦布尔',color:'#dbe4b2',title:'横跨欧亚的海峡漫游',kicker:'清真寺、香料市场与博斯普鲁斯海风'},
-      {city:'清迈',color:'#d9d3e7',title:'清迈慢生活四日记',kicker:'古城晨光、山寺与热带夜市'},
-      {city:'阿那亚',color:'#edc9cc',title:'海边社区周末散步',kicker:'礼堂、孤独图书馆与落日晚风'},
-      {city:'冰岛',color:'#cbd1e8',title:'冰岛环岛追光计划',kicker:'瀑布、黑沙滩与极光公路'},
-      {city:'大理',color:'#c9ddcf',title:'苍山洱海之间的日子',kicker:'古城、骑行与白族村落'},
-      {city:'奈良',color:'#e9d2b5',title:'奈良一日古都散策',kicker:'小鹿、古寺与若草山'},
-      {city:'巴黎',color:'#ecd0a9',title:'巴黎左岸艺术路线',kicker:'旧书店、博物馆与塞纳河黄昏'},
-      {city:'新疆',color:'#dce7ad',title:'北疆公路风景计划',kicker:'草原、雪山与湖泊长线'},
-      {city:'哥本哈根',color:'#d8d1e5',title:'北欧设计城市周末',kicker:'港口彩屋、设计馆与骑行'},
-      {city:'里斯本',color:'#efc8cc',title:'里斯本山城电车记',kicker:'花砖、坡道与大西洋日落'},
-      {city:'东京',color:'#cbd2e9',title:'东京街区观察日记',kicker:'喫茶店、建筑与夜间霓虹'},
-      {city:'摩洛哥',color:'#c9ded3',title:'摩洛哥色彩公路',kicker:'古城、沙漠与蓝色小镇'},
-      {city:'布达佩斯',color:'#ead3b8',title:'多瑙河两岸三日行',kicker:'温泉、城堡与夜色中的桥'}
+      {city:'京都',color:'#ead0af',date:'2024年5月18日',title:'初夏の京都5日行程计划',kicker:'慢茶、古寺、町家与山间小路',intro:'这是我期待已久的京都之旅。想在初夏的微风里，走进古老的街巷，喝一碗抹茶，听一场雨落在屋檐上。以下是这趟旅程的计划与准备，记录出发前的每一个细节。',overview:['Day 1｜抵达京都 · 祇园散步 · 花见小路 · 鸭川夜景','Day 2｜清水寺 · 二年坂三年坂 · 伏见稻荷大社','Day 3｜岚山竹林 · 嵯峨野小火车 · 天龙寺','Day 4｜哲学之道 · 银阁寺 · 南禅寺 · 蹴上倾斜铁道','Day 5｜锦市场 · 平安神宫 · 返程'],highlights:['清水寺：清晨前往，避开人潮，感受山寺的宁静。','伏见稻荷大社：走到千本鸟居深处，感受朱红色鸟居的延伸感。','岚山竹林小径：光影斑驳，记得带上广角镜头。','锦市场：体验在地美食与手信，推荐玉子烧与抹茶甜点。','金阁寺：上午顺光时倒影最漂亮，建议开门后尽早抵达。','南禅寺：穿过水路阁与三门，在古寺庭院里慢慢散步。','哲学之道：沿着疏水步行，串联银阁寺与沿途的小店。','祇园花见小路：傍晚最有町家氛围，注意保持安静并尊重居民。'],routes:['🚆|机场 → 京都站：HARUKA 特急约 75 分钟直达。','▣|市内交通：购买巴士一日券，主要景点基本覆盖。','⌁|步行为主：许多小巷与寺院之间，步行最能感受京都。'],food:['上午：茶屋抹茶、和果子','午餐：汤豆腐、荞麦面、鳗鱼饭','晚餐：怀石料理或居酒屋小酌','推荐：% Arabica、茶寮宝泉、顺正汤豆腐'],accommodation:['京都站周边：交通方便，适合抵达与返程日。','祇园/东山：步行可达古街与寺院，适合体验町家氛围。','四条河原町：餐饮购物集中，夜间出行方便。'],daily_stays:['Day 1｜京都站周边商务酒店｜人民币 ¥700–1,100/晚','Day 2｜祇园町家旅宿｜人民币 ¥1,000–1,800/晚','Day 3｜祇园町家旅宿｜人民币 ¥1,000–1,800/晚','Day 4｜四条河原町精品酒店｜人民币 ¥900–1,500/晚','Day 5｜返程日，不安排住宿｜人民币 ¥0'],packing:'轻便为主，舒适的鞋子与雨具必备。相机、充电器、转换插头、交通卡（ICOCA）。5月天气多变，薄外套与晴雨两用伞放进行李侧袋。',quote:'旅行的意义，不只是到达一个地方，而是在路上，遇见更好的自己。'},
+      {city:'伊斯坦布尔',color:'#dbe4b2',title:'横跨欧亚的海峡漫游',kicker:'清真寺、香料市场与博斯普鲁斯海风',highlights:['圣索菲亚大教堂：清晨入场，细看穹顶、马赛克与跨越时代的建筑层次。','蓝色清真寺：从苏丹艾哈迈德广场欣赏六座宣礼塔，入内记得留意礼拜时间。','托普卡帕宫：为宝库、后宫与博斯普鲁斯海峡观景台预留半天。','地下水宫：避开午后高峰，在昏暗水面与石柱之间慢慢参观。','大巴扎：从主通道进入支巷，体验地毯、灯具与香料铺的色彩。','加拉塔塔：日落前登塔，俯瞰金角湾与老城区天际线。','奥塔科伊清真寺：在海峡岸边拍摄清真寺与博斯普鲁斯大桥同框。','多尔玛巴赫切宫：沿海参观华丽宫殿，并在临水花园停留。']},
+      {city:'清迈',color:'#d9d3e7',title:'清迈慢生活四日记',kicker:'古城晨光、山寺与热带夜市',highlights:['契迪龙寺：清晨看古老佛塔被阳光照亮，感受古城中心的宁静。','帕辛寺：欣赏兰纳式屋顶与木雕，进入殿内请保持安静。','素贴山双龙寺：沿娜迦阶梯登山，在观景台俯瞰清迈城区。','塔佩门：傍晚来古城东门散步，避开正午强光与拥挤人流。','清迈夜市：夜间品尝小吃并挑选手工艺品，提前准备零钱。','瓦洛洛市场：上午探索本地干货、香料与北泰零食。','蒲屏皇宫：花园盛放时色彩丰富，可与素贴山安排同日。','茵他侬山国家公园：留出一整天看双塔、云海与高山瀑布。']},
+      {city:'阿那亚',color:'#edc9cc',title:'海边社区周末散步',kicker:'礼堂、孤独图书馆与落日晚风',highlights:['阿那亚礼堂：清晨或日落时看白色建筑与海岸光影，需提前确认预约。','孤独图书馆：在安静阅读空间面向大海坐一会儿，遵守馆内拍摄规定。','阿那亚艺术中心：沿旋转式展厅看展，留意中央庭院的水面倒影。','沙丘美术馆：走进沙丘下的洞穴式空间，感受自然采光变化。','阿那亚海滩：日出前抵达海岸，沿木栈道散步并注意潮汐。','阿那亚剧场：查看当日演出与开放信息，建筑外部也适合傍晚停留。','犬舍酒店：欣赏海边社区里极具辨识度的几何建筑与庭院。','阿那亚马场：在开阔草地与马厩周边漫步，体验海边社区的松弛感。']},
+      {city:'冰岛',color:'#cbd1e8',title:'冰岛环岛追光计划',kicker:'瀑布、黑沙滩与极光公路',highlights:['哈尔格林姆教堂：登塔俯瞰雷克雅未克彩色屋顶与海湾。','蓝湖：提前预约入场，在熔岩原野间体验地热温泉。','黄金瀑布：沿上下观景台看冰川河水分级跌落峡谷。','间歇泉地热区：在安全线外等待斯特罗柯间歇泉喷发。','塞里雅兰瀑布：穿防水外套走到瀑布后方，冬季留意步道封闭。','斯科加瀑布：走近瀑布底部看水雾彩虹，再登阶梯看上游。','雷尼斯黑沙滩：观察玄武岩柱与海蚀柱，始终远离突袭浪。','杰古沙龙冰河湖：乘船或沿岸看浮冰，并顺路前往钻石沙滩。']},
+      {city:'大理',color:'#c9ddcf',title:'苍山洱海之间的日子',kicker:'古城、骑行与白族村落',highlights:['大理古城：清晨走过南门与街巷，避开晚间最拥挤的时段。','崇圣寺三塔：从倒影公园拍摄三塔与苍山同框。','洱海生态廊道：选一段骑行，在临水村落与湿地之间慢慢前进。','喜洲古镇：看白族院落与稻田风景，品尝刚出炉的喜洲粑粑。','双廊古镇：沿洱海东岸散步，在日落前寻找临水观景位。','苍山洗马潭：天气晴朗时乘索道上山，注意高海拔温差。','沙溪古镇：在寺登街与古戏台周围慢走，体验茶马古道气息。','周城村：参观白族扎染作坊，了解传统蓝染工艺。']},
+      {city:'奈良',color:'#e9d2b5',title:'奈良一日古都散策',kicker:'小鹿、古寺与若草山',highlights:['东大寺：开门后尽早参观大佛殿，留意宏大的木构尺度。','奈良公园：与鹿保持适当距离，喂鹿饼时把包装纸收好。','春日大社：沿石灯笼参道步入朱红社殿，清晨氛围最安静。','兴福寺：从五重塔与中金堂开始认识古都寺院群。','若草山：傍晚登上草坡，俯瞰奈良盆地与寺院屋顶。','唐招提寺：欣赏金堂与讲堂，感受唐代建筑传承。','药师寺：从东西双塔看奈良古寺鲜明而对称的布局。','依水园：在借景庭园中眺望若草山，适合放慢脚步。']},
+      {city:'巴黎',color:'#ecd0a9',title:'巴黎左岸艺术路线',kicker:'旧书店、博物馆与塞纳河黄昏',highlights:['埃菲尔铁塔：从特罗卡德罗广场或战神广场寻找完整视角。','卢浮宫：提前预约并规划重点展厅，避免在巨大馆区来回折返。','巴黎圣母院：沿西岱岛欣赏修复后的立面与塞纳河景观。','圣心大教堂：清晨登上蒙马特高地，俯瞰巴黎城市天际线。','凯旋门：日落前登顶，看香榭丽舍大街与放射状大道亮灯。','奥赛博物馆：为印象派展厅与大钟窗景预留至少两小时。','巴黎歌剧院：参加日间参观，细看大楼梯与华丽穹顶。','凡尔赛宫：安排一整天参观镜厅、花园与大小特里亚农宫。']},
+      {city:'新疆',color:'#dce7ad',title:'北疆公路风景计划',kicker:'草原、雪山与湖泊长线',highlights:['喀纳斯湖：乘区间车进入景区，在观鱼台俯瞰湖湾与群山。','禾木村：清晨登观景台看木屋、炊烟与河谷晨雾。','赛里木湖：沿环湖公路选择多个停靠点，关注天气与风力。','那拉提草原：在河谷草原与空中草原之间选择适合季节的线路。','巴音布鲁克草原：日落前抵达九曲十八弯观景台，提前预留区间车时间。','天山天池：从湖畔看博格达峰，旺季尽量早到。','五彩滩：傍晚光线最能呈现雅丹地貌色彩，注意防风。','独库公路：确认季节性开放状态，途中随时关注天气与道路信息。']},
+      {city:'哥本哈根',color:'#d8d1e5',title:'北欧设计城市周末',kicker:'港口彩屋、设计馆与骑行',highlights:['新港：清晨沿彩色港屋散步，避开游船码头最忙时段。','小美人鱼雕像：沿海滨步道抵达雕像，并顺路参观卡斯特雷特要塞。','罗森堡宫：参观王室珍宝后在国王花园停留。','阿美琳堡宫：中午前抵达广场观看卫兵换岗。','圆塔：沿螺旋坡道登顶，俯瞰老城屋顶。','趣伏里公园：傍晚入园，从日间花园一路看到夜间灯光。','腓特烈教堂：欣赏标志性绿色穹顶，并与阿美琳堡宫连线游览。','克里斯蒂安堡宫：登塔或参观皇家接待厅，认识丹麦政治与王室历史。']},
+      {city:'里斯本',color:'#efc8cc',title:'里斯本山城电车记',kicker:'花砖、坡道与大西洋日落',highlights:['贝伦塔：清晨沿塔霍河抵达，欣赏曼努埃尔式建筑细节。','热罗尼莫斯修道院：提前排队参观回廊，并顺路品尝贝伦蛋挞。','商业广场：从凯旋门走向河岸，感受开阔的城市入口。','圣乔治城堡：日落前登城墙，俯瞰红屋顶与塔霍河。','佩纳宫：从里斯本早出发前往辛特拉，提前预约入场时段。','雷加莱拉庄园：沿花园地下通道探索启蒙井与塔楼。','圣胡斯塔升降机：避开排队高峰，也可从卡尔莫广场进入上层平台。','发现者纪念碑：登顶看贝伦区与河面几何图案。']},
+      {city:'东京',color:'#cbd2e9',title:'东京街区观察日记',kicker:'喫茶店、建筑与夜间霓虹',highlights:['浅草寺：清晨穿过雷门与仲见世，感受尚未拥挤的寺院。','东京晴空塔：选择能见度高的傍晚登塔，看城市从白昼转入夜景。','明治神宫：沿林荫参道步行，在城市中心体验安静氛围。','涩谷十字路口：从高处观察巨大人流，夜间霓虹更有辨识度。','东京塔：从芝公园拍摄经典红白塔身，也可登展望台看夜景。','新宿御苑：依季节欣赏樱花、秋叶与庭园，注意闭园时间。','皇居二重桥：沿皇居外苑散步，拍摄石桥、城墙与松林。','teamLab Planets：提前预约沉浸式展览，穿方便脱鞋的服装。']},
+      {city:'摩洛哥',color:'#c9ded3',title:'摩洛哥色彩公路',kicker:'古城、沙漠与蓝色小镇',highlights:['哈桑二世清真寺：沿卡萨布兰卡海岸欣赏宏大建筑与大西洋浪花。','舍夫沙万老城：清晨走入蓝色巷道，在居民区保持安静。','马拉喀什杰马夫纳广场：傍晚看广场从市集转为热闹夜场。','马约尔花园：预约早场，在钴蓝建筑与热带植物间漫步。','巴伊亚宫：细看庭院、木雕与摩洛哥传统马赛克。','阿伊特本哈杜筑垒村：跨过河谷登上古村高处，欣赏土色建筑群。','梅尔祖卡沙丘：在向导带领下进入撒哈拉，等待日落与星空。','菲斯布日卢蓝门：从蓝门进入菲斯古城，沿主要巷道探索市集与手工作坊。']},
+      {city:'布达佩斯',color:'#ead3b8',title:'多瑙河两岸三日行',kicker:'温泉、城堡与夜色中的桥',highlights:['匈牙利国会大厦：从多瑙河对岸拍摄完整立面，夜间亮灯尤其壮观。','渔人堡：清晨登上回廊，俯瞰国会大厦与佩斯城区。','布达城堡：沿城堡山步行，串联宫殿、庭院与多瑙河景观。','塞切尼链桥：步行过桥连接布达与佩斯，留意维修开放状态。','圣伊什特万圣殿：登上穹顶观景台看城市中心全景。','塞切尼温泉浴场：提前购票，在新巴洛克建筑中体验露天温泉。','马加什教堂：欣赏彩色琉璃屋顶与精致的哥特式内部。','中央市场大厅：上午逛食品与香料摊位，品尝当地小吃。']}
     ];
+    const coldStartOverviewCards = {
+      '伊斯坦布尔':'伊斯坦布尔历史城区：先从城市全景建立方向感，再按地标逐一深入。',
+      '清迈':'清迈古城：从护城河与古城街巷开始，认识兰纳城市格局。',
+      '阿那亚':'阿那亚海滩：沿社区海岸慢走，在日出或日落时感受海边光线。',
+      '冰岛':'冰岛环岛风光：先认识火山、冰川与海岸共同塑造的开阔地貌。',
+      '大理':'苍山洱海：从山海全景开始，再沿湖岸与村落分段探索。',
+      '巴黎':'巴黎城市天际线：先从高处辨认塞纳河、街区与主要地标。',
+      '新疆':'北疆公路风光：长距离移动本身就是风景，途中只在安全区域停车。',
+      '哥本哈根':'哥本哈根港区：沿水岸骑行，认识港口城市的彩屋与现代建筑。',
+      '里斯本':'里斯本山城街景：先乘电车穿过坡道与花砖街区，再步行深入。',
+      '东京':'东京夜景：从高处或街区路口观察霓虹、轨道与密集城市层次。',
+      '摩洛哥':'摩洛哥古城：从城门进入麦地那，在巷道、庭院与市集中慢慢探索。',
+      '布达佩斯':'多瑙河两岸：先从河岸看布达与佩斯的城市轮廓，再跨桥游览。'
+    };
+    destinations.forEach(item => {
+      item.content_origin = 'cold-start';
+      const overviewCard = coldStartOverviewCards[item.city];
+      if (overviewCard && Array.isArray(item.highlights)) item.highlights = [overviewCard,...item.highlights];
+    });
+    const COLD_START_DESTINATION_COUNT = destinations.length;
+    const COLD_START_CITY_NAMES = destinations.map(item => item.city);
     const fallback = {
       date:'2025年旅行手账',
       intro:'把目的地拆成可以慢慢体验的日常：留出步行、偶遇与发呆的时间，也为最想看的风景保留最好的光线。',
       overview:['Day 1｜抵达 · 入住 · 老城散步','Day 2｜地标建筑 · 当地市场 · 夜景','Day 3｜近郊自然 · 社区餐厅 · 自由探索','Day 4｜博物馆 · 咖啡馆 · 返程'],
-      highlights:['从城市最具代表性的街区开始，先建立方向感。','把热门景点安排在清晨或傍晚，避开人流。','至少留半天不排计划，让旅程自然发生。','选择一家当地市场，认识真正的日常味道。'],
+      highlights:['城市代表街区：先从最有辨识度的街区开始，建立方向感。','经典地标：安排在清晨或傍晚前往，尽量避开人流。','历史建筑：预留完整参观时间，不把行程排得太赶。','在地市场：用一顿早餐或午餐认识当地人的日常味道。','城市博物馆：挑选一座最能解释当地历史与文化的馆藏。','自然景观：留出半天前往公园、海岸或山间步道。','观景位置：在日落前抵达，完整欣赏城市从白天到入夜。','夜间街区：选择交通方便且安全的区域体验当地夜生活。'],
       routes:['✈|抵达：优先选择公共交通进入市中心。','▣|市内：步行结合地铁，减少往返折线。','⌁|节奏：每天只安排一个重点区域。'],
       food:['早餐：本地面包与咖啡','午餐：市场或街区小馆','晚餐：提前预订一家代表性餐厅','随身：水、坚果与当地水果'],
       accommodation:['市中心交通枢纽附近：换乘方便，适合首次到访。','核心街区：步行可达餐厅与主要景点。','特色社区旅宿：适合体验当地生活，但需确认夜间交通。'],
@@ -387,6 +507,14 @@
       quote:'好旅程不是打卡更多，而是记住更多。'
     };
     const PLAN_STORAGE_KEY = 'travel-plans-v1';
+    const SHARE_MAX_BYTES = 512 * 1024;
+    const sharedPageId = new URLSearchParams(location.search).get('share');
+    const sharedPageToken = new URLSearchParams(location.hash.replace(/^#/, '')).get('edit');
+    const isSharedPage = Boolean(sharedPageId);
+    let currentAccount = null;
+    let currentLLMConfigured = false;
+    let currentPublicDemoEnabled = false;
+    let authMode = 'login';
     const DEFAULT_CURRENCY = { code:'CNY', label:'人民币', symbol:'¥' };
     function deduplicateDestinations() {
       const seen = new Set();
@@ -401,7 +529,16 @@
       try {
         const saved = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || 'null');
         if (!Array.isArray(saved) || !saved.length) return;
+        const coldStartTemplates = new Map(destinations.map(item => [item.city,item]));
         const valid = saved.filter(item => item && typeof item === 'object' && typeof item.city === 'string' && item.city.trim());
+        valid.forEach((item,index) => {
+          if (!item.content_origin) item.content_origin = COLD_START_CITY_NAMES[index] === item.city ? 'cold-start' : 'user-api';
+          const template = coldStartTemplates.get(item.city);
+          const hasLegacyGenericHighlights = Array.isArray(item.highlights) && item.highlights.some(row => /城市代表街区|经典地标/.test(String(row)));
+          if (item.content_origin === 'cold-start' && template && (!Array.isArray(item.highlights) || hasLegacyGenericHighlights)) {
+            item.highlights = [...template.highlights];
+          }
+        });
         if (valid.length) destinations.splice(0,destinations.length,...valid);
       } catch {}
     }
@@ -413,9 +550,91 @@
         return false;
       }
     }
+    function shareablePlan(index = active) {
+      const data = dataFor(index);
+      const fields = ['city','color','date','title','kicker','intro','overview','highlights','routes','food','accommodation','daily_stays','packing','quote','richSections'];
+      return Object.fromEntries(fields.filter(field => data[field] !== undefined).map(field => [field,JSON.parse(JSON.stringify(data[field]))]));
+    }
+    function sharePayloadBytes(plan) { return new TextEncoder().encode(JSON.stringify({plan})).length; }
+    async function apiJSON(url,options = {}) {
+      const response = await fetch(url,options);
+      let payload = null;
+      try { payload = await response.json(); } catch {}
+      if (!response.ok) {
+        const error = new Error(payload?.error?.message || `请求失败（${response.status}）`);
+        error.code = payload?.error?.code || 'REQUEST_FAILED';
+        error.status = response.status;
+        throw error;
+      }
+      return payload;
+    }
+    function setShareStatus(message,type = '') {
+      const status = $('#shareStatus');
+      status.textContent = message; status.className = `api-status${type ? ` ${type}` : ''}`; status.hidden = !message;
+    }
+    function shareURLs(info) {
+      const read = new URL(location.origin + location.pathname);
+      read.searchParams.set('share',info.id);
+      const edit = new URL(read);
+      edit.hash = `edit=${encodeURIComponent(info.token)}`;
+      return {read:read.href,edit:edit.href};
+    }
+    function showShareLinks(info) {
+      const urls = shareURLs(info);
+      $('#readShareUrl').value = urls.read;
+      $('#editShareUrl').value = urls.edit;
+      $('#shareLinks').hidden = false;
+      setShareStatus('分享已就绪，好友的修改会保存到同一份云端规划。','success');
+    }
+    function closeShareModal() { $('#shareModal').hidden = true; }
+    async function openShareModal() {
+      $('#shareModal').hidden = false;
+      $('#shareLinks').hidden = true;
+      const item = destinations[active];
+      if (item?._share?.id && item._share.token) { showShareLinks(item._share); return; }
+      setShareStatus('正在创建云端分享…','loading');
+      try {
+        const plan = shareablePlan();
+        if (sharePayloadBytes(plan) > SHARE_MAX_BYTES) throw new Error('共享规划超过 512 KiB，请压缩或移除较大的本地图片。');
+        const created = await apiJSON('/api/shares',{
+          method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({plan})
+        });
+        item._share = {id:created.id,token:created.edit_token,version:created.version};
+        persistTravelPlans();
+        showShareLinks(item._share);
+      } catch (error) { setShareStatus(error.message,'error'); }
+    }
+    async function copyShareValue(kind,button) {
+      const input = kind === 'edit' ? $('#editShareUrl') : $('#readShareUrl');
+      try {
+        await navigator.clipboard.writeText(input.value);
+      } catch {
+        input.focus(); input.select();
+        if (!document.execCommand('copy')) { setShareStatus('无法自动复制，请手动选择链接复制。','error'); return; }
+      }
+      const original = button.textContent; button.textContent = '已复制';
+      setTimeout(() => { button.textContent = original; },1200);
+    }
+    async function updateSharedPlan(item) {
+      const info = item?._share;
+      if (!info?.id) return;
+      if (!info.token) throw new Error('此链接为只读链接，不能保存修改。');
+      const plan = shareablePlan();
+      if (sharePayloadBytes(plan) > SHARE_MAX_BYTES) throw new Error('共享规划超过 512 KiB，请压缩或移除较大的本地图片。');
+      const updated = await apiJSON(`/api/shares/${encodeURIComponent(info.id)}`,{
+        method:'PUT',headers:{'content-type':'application/json','authorization':`Bearer ${info.token}`},
+        body:JSON.stringify({version:info.version,plan})
+      });
+      info.version = updated.version;
+    }
+    async function loadRemotePlan(id,token,index = 0) {
+      const remote = await apiJSON(`/api/shares/${encodeURIComponent(id)}`);
+      destinations[index] = {...remote.plan,_share:{id,token:token || '',version:remote.version}};
+      return remote;
+    }
     restoreTravelPlans();
     deduplicateDestinations();
-    const initialDestinationCount = destinations.length;
+    const initialDestinationCount = COLD_START_DESTINATION_COUNT;
     let active = 0;
     let pendingAIAction = null;
     let lastAIResponse = null;
@@ -537,7 +756,7 @@
       const items = [...container.querySelectorAll(selector)].map(item => item.textContent.trim()).filter(Boolean).slice(0,30);
       return items.length ? items : (container.textContent.trim() ? [container.textContent.trim()] : []);
     }
-    function saveInlineEditing() {
+    async function saveInlineEditing() {
       const item = destinations[active];
       if (!item) return;
       const richSections = {};
@@ -561,7 +780,22 @@
         accommodation:textItems($('#accommodationList'),'li'), daily_stays:dailyStayRows.length ? dailyStayRows : textItems($('#dailyStayList'),'p'),
         packing:$('#packingText').textContent.trim(), quote:$('#quoteText').textContent.trim(), richSections
       });
-      if (!persistTravelPlans()) { setInlineEditorStatus('保存失败：内容可能过大，请减少本地图片后重试。'); return; }
+      const saveButton = $('#saveInlineEdit');
+      saveButton.disabled = true; saveButton.textContent = item._share?.id ? '正在同步…' : '正在保存…';
+      try {
+        await updateSharedPlan(item);
+      } catch (error) {
+        saveButton.disabled = false; saveButton.textContent = '保存修改';
+        setInlineEditorStatus(error.code === 'SHARE_CONFLICT' ? '保存冲突：好友已更新这份规划。你的编辑仍保留，请复制需要保留的内容后刷新最新版。' : `保存失败：${error.message}`);
+        return;
+      }
+      if (!isSharedPage) {
+        if (!persistTravelPlans()) {
+          saveButton.disabled = false; saveButton.textContent = '保存修改';
+          setInlineEditorStatus('保存失败：内容可能过大，请减少本地图片后重试。'); return;
+        }
+      }
+      saveButton.disabled = false; saveButton.textContent = '保存修改';
       stopInlineEditing(); renderEntry();
       const button = $('#editPlanButton'); button.textContent = '已保存';
       setTimeout(() => { button.textContent = '编辑行程'; },1400);
@@ -571,6 +805,7 @@
       const right = $('#rightTabList');
       left.innerHTML = '';
       right.innerHTML = '';
+      if (isSharedPage) return;
       const midpoint = Math.ceil(initialDestinationCount / 2);
       const leftIndexes = Array.from({length:midpoint},(_,index) => index);
       const originalRightIndexes = Array.from({length:initialDestinationCount - midpoint},(_,index) => midpoint + index);
@@ -611,6 +846,268 @@
       if (!event.target.closest('.tab-rail')) closeTabRails();
     });
     function fillList(selector,items) { $(selector).innerHTML = items.map(item => `<li>${escapeHTML(item)}</li>`).join(''); }
+    const HIGHLIGHT_IMAGE_RULES = [
+      [['清水寺'],'assets/highlights/kiyomizu-dera.jpg'],
+      [['伏见稻荷','千本鸟居'],'assets/highlights/fushimi-inari.jpg'],
+      [['岚山','竹林','嵯峨野'],'assets/highlights/arashiyama-bamboo.jpg'],
+      [['锦市场'],'assets/highlights/nishiki-market.jpg'],
+      [['金阁寺','鹿苑寺'],'assets/highlights/kinkakuji.png'],
+      [['南禅寺'],'assets/highlights/nanzenji.png'],
+      [['哲学之道'],'assets/highlights/philosophers-path.png'],
+      [['祇园花见小路','花见小路'],'assets/highlights/gion-hanamikoji.png'],
+      [['伊斯坦布尔历史城区'],'assets/highlights/istanbul.jpg'],
+      [['清迈古城'],'assets/highlights/chiang-mai.jpg'],
+      [['阿那亚海滩'],'assets/highlights/aranya.jpg'],
+      [['冰岛环岛风光'],'assets/highlights/iceland.jpg'],
+      [['苍山洱海'],'assets/highlights/dali.jpg'],
+      [['巴黎城市天际线'],'assets/highlights/paris.jpg'],
+      [['北疆公路风光'],'assets/highlights/xinjiang.jpg'],
+      [['哥本哈根港区'],'assets/highlights/copenhagen.jpg'],
+      [['里斯本山城街景'],'assets/highlights/lisbon.jpg'],
+      [['东京夜景'],'assets/highlights/tokyo.jpg'],
+      [['摩洛哥古城'],'assets/highlights/morocco.jpg'],
+      [['多瑙河两岸'],'assets/highlights/budapest.jpg']
+    ];
+    function highlightParts(item) {
+      const text = String(item || '').trim();
+      const match = text.match(/^(.{1,28}?)([：:，,。])\s*(.*)$/u);
+      return match ? {title:match[1],separator:match[2],description:match[3]} : {title:text,separator:'',description:''};
+    }
+    function imageForHighlight(city,item,index) {
+      const {title} = highlightParts(item);
+      const matched = HIGHLIGHT_IMAGE_RULES.find(([keywords]) => keywords.some(keyword => title.includes(keyword)));
+      return matched ? matched[1] : '';
+    }
+    function highlightCarouselIndex() {
+      const track = $('#highlightList');
+      const cards = [...track.children];
+      if (!cards.length) return 0;
+      const trackLeft = track.getBoundingClientRect().left;
+      let bestIndex = 0;
+      let bestDistance = Infinity;
+      cards.forEach((card,index) => {
+        const distance = Math.abs(card.getBoundingClientRect().left - trackLeft);
+        if (distance < bestDistance) { bestDistance = distance; bestIndex = index; }
+      });
+      return bestIndex;
+    }
+    function updateHighlightCarousel() {
+      const cards = [...$('#highlightList').children];
+      const index = highlightCarouselIndex();
+      $('#highlightPosition').textContent = cards.length ? `${index + 1} / ${cards.length}` : '';
+      $('#highlightPrevious').disabled = index <= 0;
+      $('#highlightNext').disabled = !cards.length || index >= cards.length - 1;
+    }
+    function moveHighlightCarousel(direction) {
+      const track = $('#highlightList');
+      const cards = [...track.children];
+      const target = cards[Math.max(0,Math.min(cards.length - 1,highlightCarouselIndex() + direction))];
+      if (target) track.scrollTo({left:target.offsetLeft - (cards[0]?.offsetLeft || 0),behavior:'smooth'});
+    }
+    const placeImageRequests = new Map();
+    const PLACE_IMAGE_CACHE_KEY = 'travel-highlight-images-v1';
+    function readPlaceImageCache() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PLACE_IMAGE_CACHE_KEY) || '{}');
+        return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+      } catch { return {}; }
+    }
+    function cachedPlaceImage(city,place) {
+      const cached = readPlaceImageCache()[`${city}|${place}`];
+      return cached && /^https:\/\//.test(cached.image_url || '') ? cached : null;
+    }
+    function cachePlaceImage(city,place,result) {
+      if (!result || !/^https:\/\//.test(result.image_url || '')) return;
+      try {
+        const cache = readPlaceImageCache();
+        cache[`${city}|${place}`] = result;
+        localStorage.setItem(PLACE_IMAGE_CACHE_KEY,JSON.stringify(cache));
+      } catch {}
+    }
+    function stableImageSeed(value) {
+      let hash = 2166136261;
+      for (const character of String(value || '')) { hash ^= character.codePointAt(0); hash = Math.imul(hash,16777619); }
+      return Math.abs(hash >>> 0);
+    }
+    function generatedPlaceImageURL(city,place,attempt = 0) {
+      const prompt = [
+        `Photorealistic editorial travel photograph of ${place} in ${city}.`,
+        `Show the exact recognizable architecture, landscape, cultural details and geographic setting of ${place}.`,
+        'Portrait 4:5 composition, vivid natural colors, realistic daylight, ultra-high-resolution professional travel photography.',
+        'Tack-sharp architectural detail, crisp edges, fine natural textures, no haze, no motion blur, no artificial upscaling artifacts.',
+        'No people posing for camera, no text, no captions, no logo, no watermark.'
+      ].join(' ');
+      const params = new URLSearchParams({width:'1536',height:'1920',model:'flux',quality:'high',seed:String(stableImageSeed(`${city}|${place}|${attempt}`)),nologo:'true',enhance:'true'});
+      return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${params}`;
+    }
+    function compactPlaceText(value) {
+      return String(value || '').normalize('NFKC').toLowerCase().replace(/[\s·•・—–\-_:：,，.。()（）【】\[\]]/g,'');
+    }
+    const PLACE_IMAGE_ALIASES = [
+      ['金阁寺','鹿苑寺','金閣寺'],
+      ['伏见稻荷大社','伏見稲荷大社','伏见稻荷'],
+      ['祇园花见小路','祇園花見小路','花见小路','花見小路']
+    ];
+    function placeImageNames(place) {
+      const normalizedPlace = compactPlaceText(place);
+      const aliases = PLACE_IMAGE_ALIASES.find(group => group.some(name => compactPlaceText(name) === normalizedPlace));
+      return (aliases || [place]).map(compactPlaceText).filter(Boolean);
+    }
+    function placeImageTitleMatches(title,place) {
+      const normalizedTitle = compactPlaceText(title);
+      return normalizedTitle && placeImageNames(place).some(name => normalizedTitle === name || (name.length >= 3 && normalizedTitle.includes(name)));
+    }
+    function wikipediaResult(page,place) {
+      const title = String(page?.title || '');
+      const imageURL = String(page?.thumbnail?.source || page?.originalimage?.source || page?.original?.source || '');
+      if (!imageURL.startsWith('https://') || !placeImageTitleMatches(title,place)) return null;
+      return {matched:true,image_url:imageURL,article_title:title};
+    }
+    async function searchPlaceImageInBrowser(city,place) {
+      try {
+        const summary = await fetch(`https://zh.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);
+        if (summary.ok) {
+          const exact = wikipediaResult(await summary.json(),place);
+          if (exact) return exact;
+        }
+        const params = new URLSearchParams({action:'query',generator:'search',gsrsearch:`${city} ${place}`.trim(),gsrnamespace:'0',gsrlimit:'6',prop:'pageimages',piprop:'thumbnail|original',pithumbsize:'1400',format:'json',formatversion:'2',origin:'*'});
+        const response = await fetch(`https://zh.wikipedia.org/w/api.php?${params}`);
+        if (!response.ok) return null;
+        const pages = (await response.json())?.query?.pages || [];
+        return pages.map(page => wikipediaResult(page,place)).find(Boolean) || null;
+      } catch { return null; }
+    }
+    async function verifiedPlaceImage(city,place) {
+      const key = `${city}|${place}`;
+      if (!placeImageRequests.has(key)) {
+        const cached = cachedPlaceImage(city,place);
+        if (cached) return cached;
+        placeImageRequests.set(key,fetch(`/api/place-image?city=${encodeURIComponent(city)}&place=${encodeURIComponent(place)}`)
+          .then(response => response.ok ? response.json() : null)
+          .then(result => result?.matched && /^https:\/\//.test(result.image_url || '') ? result : null)
+          .catch(() => null)
+          .then(result => result || searchPlaceImageInBrowser(city,place))
+          .then(result => {
+            if (result) cachePlaceImage(city,place,{...result,source:'searched'});
+            return result;
+          }));
+      }
+      return placeImageRequests.get(key);
+    }
+    function preloadCardImage(url,timeoutMs = 18000) {
+      return new Promise(resolve => {
+        const probe = new Image();
+        let settled = false;
+        const finish = value => { if (settled) return; settled = true; clearTimeout(timer); resolve(value); };
+        const timer = setTimeout(() => finish({ok:false,width:0,height:0}),timeoutMs);
+        probe.onload = () => finish({ok:true,width:probe.naturalWidth,height:probe.naturalHeight});
+        probe.onerror = () => finish({ok:false,width:0,height:0});
+        probe.src = url;
+      });
+    }
+    function isHighResolutionImage(image,portrait = false) {
+      if (!image?.ok) return false;
+      return portrait
+        ? image.width >= 1400 && image.height >= 1750
+        : Math.min(image.width,image.height) >= 900 && Math.max(image.width,image.height) >= 1400;
+    }
+    function isUsablePlaceImage(image) {
+      return Boolean(image?.ok && image.width >= 240 && image.height >= 180);
+    }
+    function applyHighlightCardImage(card,url,label,source) {
+      if (!card.isConnected) return false;
+      const image = card.querySelector('img');
+      if (!image) return false;
+      image.src = url;
+      image.hidden = false;
+      card.style.backgroundImage = `url("${url.replace(/"/g,'%22')}")`;
+      card.dataset.imageSource = source;
+      card.title = label;
+      card.querySelector('.highlight-card-image-state')?.remove();
+      return true;
+    }
+    function markHighlightCardUnavailable(card) {
+      if (!card.isConnected || card.dataset.imageSource !== 'unavailable') return;
+      const state = card.querySelector('.highlight-card-image-state');
+      if (state) state.innerHTML = '<span>图片好像迷路啦 🧭</span><button class="highlight-image-retry" type="button">重新找一张匹配图片</button>';
+      card.title = '没有检索或生成出与该景点明确对应的图片';
+    }
+    async function matchHighlightCardImage(card,city,place) {
+      const match = await verifiedPlaceImage(city,place);
+      if (match && card.isConnected) {
+        const searchedImage = await preloadCardImage(match.image_url);
+        if (isUsablePlaceImage(searchedImage)) {
+          const highResolution = isHighResolutionImage(searchedImage);
+          applyHighlightCardImage(card,match.image_url,`Web Search ${highResolution ? '高清' : '低清'}匹配：${match.article_title}`,'searched');
+          card.dataset.imageMatched = 'true';
+          card.dataset.imageQuality = highResolution ? 'high' : 'low';
+          return;
+        }
+      }
+      const state = card.querySelector('.highlight-card-image-state');
+      if (state) state.innerHTML = '<span>没有找到合适的现成图片</span><span>正在用 AI 生成兜底图 ✨</span>';
+      const generatedURL = generatedPlaceImageURL(city,place,Number(card.dataset.imageAttempt || 0));
+      const generatedImage = await preloadCardImage(generatedURL,45000);
+      if (isUsablePlaceImage(generatedImage)) {
+        applyHighlightCardImage(card,generatedURL,`Web Search 未找到匹配图片，AI 根据地点生成：${city} · ${place}`,'generated');
+        card.dataset.imageQuality = isHighResolutionImage(generatedImage,true) ? 'high' : 'low';
+        cachePlaceImage(city,place,{matched:true,image_url:generatedURL,article_title:`AI 生成：${city} · ${place}`,source:'generated'});
+        return;
+      }
+      markHighlightCardUnavailable(card);
+    }
+    async function matchHighlightImages(city,highlights,cards) {
+      for (let start = 0; start < cards.length; start += 3) {
+        const batch = cards.slice(start,start + 3).map((card,offset) => {
+          const {title} = highlightParts(highlights[start + offset]);
+          return matchHighlightCardImage(card,city,title);
+        });
+        await Promise.all(batch);
+      }
+    }
+    function renderHighlights(city,items,options = {}) {
+      const track = $('#highlightList');
+      const highlights = Array.isArray(items) ? items : [];
+      track.innerHTML = highlights.map((item,index) => {
+        const {title,separator,description} = highlightParts(item);
+        const image = imageForHighlight(city,item,index);
+        const imageURL = image ? `${image}?v=20260801-3` : '';
+        const imageSource = image ? 'local-verified' : 'unavailable';
+        const cardStyle = `position:relative;display:block;height:clamp(320px,70vw,440px);min-height:320px;overflow:hidden;border-radius:17px;background-color:#506a5c;${imageURL ? `background-image:url('${imageURL}');` : ''}background-position:center;background-size:cover;`;
+        const imageStyle = 'position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;margin:0;object-fit:cover;border-radius:0;';
+        const imageElement = `<img${imageURL ? ` src="${escapeHTML(imageURL)}"` : ' hidden'} style="${imageStyle}" alt="${escapeHTML(`${city} · ${title}`)}" loading="eager" decoding="async" draggable="false">`;
+        const imageState = imageURL ? '' : '<span class="highlight-card-image-state"><span>正在联网寻找图片 🔎</span><span>优先匹配景点现成图片，找不到再生成</span></span>';
+        return `<li class="highlight-card" data-image-source="${imageSource}" data-image-city="${escapeHTML(city)}" data-image-place="${escapeHTML(title)}" data-image-index="${index}" data-image-attempt="0" style="${escapeHTML(cardStyle)}">${imageElement}${imageState}<span class="highlight-card-copy"><strong class="highlight-card-title">${escapeHTML(title + separator)}</strong>${description ? `<span class="highlight-card-description">${escapeHTML(description)}</span>` : ''}</span></li>`;
+      }).join('');
+      track.scrollLeft = 0;
+      const cardsWithoutImages = [...track.children].filter(card => card.dataset.imageSource === 'unavailable');
+      if (cardsWithoutImages.length) {
+        const missingHighlights = cardsWithoutImages.map(card => highlights[Number(card.dataset.imageIndex)]).filter(Boolean);
+        void matchHighlightImages(city,missingHighlights,cardsWithoutImages);
+      }
+      requestAnimationFrame(updateHighlightCarousel);
+    }
+    $('#highlightPrevious').addEventListener('click',() => moveHighlightCarousel(-1));
+    $('#highlightNext').addEventListener('click',() => moveHighlightCarousel(1));
+    $('#highlightList').addEventListener('click',event => {
+      const button = event.target.closest('.highlight-image-retry');
+      if (!button) return;
+      const card = button.closest('.highlight-card');
+      const city = card?.dataset.imageCity || '';
+      const place = card?.dataset.imagePlace || '';
+      if (!card || !place) return;
+      button.disabled = true;
+      card.dataset.imageAttempt = String(Number(card.dataset.imageAttempt || 0) + 1);
+      placeImageRequests.delete(`${city}|${place}`);
+      const state = card.querySelector('.highlight-card-image-state');
+      if (state) state.innerHTML = '<span>再帮你认真找找 🔎</span><span>优先检索与景点匹配的现成图片</span>';
+      void matchHighlightCardImage(card,city,place);
+    });
+    let highlightScrollFrame = 0;
+    $('#highlightList').addEventListener('scroll',() => {
+      cancelAnimationFrame(highlightScrollFrame);
+      highlightScrollFrame = requestAnimationFrame(updateHighlightCarousel);
+    },{passive:true});
     function renderDailyStays(items) {
       $('#dailyStayList').innerHTML = items.map(item => {
         const [day,stay,...priceParts] = String(item).split('｜');
@@ -625,7 +1122,7 @@
       $('#entryKicker').textContent = data.kicker;
       $('#entryIntro').textContent = data.intro;
       fillList('#overviewList',data.overview);
-      fillList('#highlightList',data.highlights);
+      renderHighlights(data.city,data.highlights,{coldStart:data.content_origin === 'cold-start'});
       $('#routeList').innerHTML = data.routes.map(row => { const [icon,text] = row.split('|'); return `<p class="route-row"><span>${escapeHTML(icon)}</span><span>${escapeHTML(text || '')}</span></p>`; }).join('');
       $('#foodList').innerHTML = data.food.map(item => `<p>• ${escapeHTML(item)}</p>`).join('');
       fillList('#accommodationList',data.accommodation);
@@ -640,10 +1137,14 @@
       $('#positionDots').innerHTML = destinations.map((_,index) => `<span class="${index === active ? 'active' : ''}"></span>`).join('');
       renderTabs();
     }
-    function select(index) {
+    async function select(index) {
       active = (index + destinations.length) % destinations.length;
       closeTabRails();
       paper.classList.add('changing');
+      const info = destinations[active]?._share;
+      if (!isSharedPage && info?.id) {
+        try { await loadRemotePlan(info.id,info.token,active); persistTravelPlans(); } catch {}
+      }
       setTimeout(() => { renderEntry(); paper.classList.remove('changing'); },140);
     }
     const planColors = ['#e5cba7','#d8e4b5','#d9d3e7','#efcbd0','#cbd4e9','#c9ddd2'];
@@ -711,7 +1212,81 @@
       [[900,1],[10000,2],[30000,3]].forEach(([delay,index]) => timers.push(setTimeout(() => render(index),delay)));
       return () => timers.forEach(clearTimeout);
     }
+    function setAuthStatus(type,message) {
+      const status = $('#authStatus');
+      status.hidden = !message;
+      status.className = `api-status${type ? ` ${type}` : ''}`;
+      status.textContent = message;
+    }
+    function renderAccountState(session) {
+      currentAccount = session?.authenticated ? session.account : null;
+      currentLLMConfigured = Boolean(currentAccount && session?.llm_configured);
+      currentPublicDemoEnabled = Boolean(session?.public_demo_enabled);
+      $('#accountButton').textContent = currentAccount ? currentAccount.email : '登录 / 注册';
+      $('#apiSettingsButton').hidden = !currentAccount;
+      $('#logoutButton').hidden = !currentAccount;
+      $('#profileFallback').textContent = currentAccount ? currentAccount.email.slice(0,2).toUpperCase() : 'ME';
+    }
+    async function refreshAccountSession() {
+      try {
+        const response = await fetch('/api/auth/session');
+        const session = await response.json();
+        renderAccountState(session);
+        return session;
+      } catch {
+        renderAccountState({authenticated:false});
+        return {authenticated:false};
+      }
+    }
+    function setAuthMode(mode) {
+      authMode = mode;
+      const registering = mode === 'register';
+      $('#authDialogTitle').textContent = registering ? '创建 VoyageAI 账号' : '登录 VoyageAI';
+      $('#authDialogSubtitle').textContent = registering ? '账号用于安全绑定你的模型 API 配置。' : '登录后使用当前账号专属的模型配置。';
+      $('#authSubmit').textContent = registering ? '创建并登录' : '登录';
+      $('#authSwitchText').textContent = registering ? '已经有账号？' : '还没有账号？';
+      $('#authSwitchButton').textContent = registering ? '返回登录' : '创建账号';
+      $('#authPassword').autocomplete = registering ? 'new-password' : 'current-password';
+      setAuthStatus('','');
+    }
+    function showAuth(mode = 'login') {
+      setAuthMode(mode);
+      $('#authModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => $('#authEmail').focus());
+    }
+    function closeAuth() {
+      $('#authModal').hidden = true;
+      document.body.style.overflow = '';
+    }
+    async function submitAuth() {
+      const form = $('#authForm');
+      const fields = new FormData(form);
+      const button = $('#authSubmit');
+      button.disabled = true;
+      setAuthStatus('loading',authMode === 'register' ? '正在创建账号…' : '正在登录…');
+      try {
+        const response = await fetch(`/api/auth/${authMode}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:fields.get('email'),password:fields.get('password')})});
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error?.message || '账号操作失败。');
+        renderAccountState(payload);
+        form.reset();
+        closeAuth();
+        if (!payload.llm_configured && !payload.public_demo_enabled) await showLLMConfig();
+      } catch (error) {
+        setAuthStatus('error',error.message || '账号操作失败。');
+      } finally {
+        button.disabled = false;
+      }
+    }
+    async function logoutAccount() {
+      await fetch('/api/auth/logout',{method:'POST'}).catch(() => {});
+      renderAccountState({authenticated:false});
+      $('#menuPanel').classList.remove('open');
+      showAuth('login');
+    }
     async function showLLMConfig() {
+      if (!currentAccount) { showAuth('login'); return; }
       const modal = $('#apiModal');
       modal.hidden = false;
       document.body.style.overflow = 'hidden';
@@ -719,17 +1294,21 @@
       try {
         const response = await fetch('/api/llm/config');
         const config = await response.json();
-        if (!response.ok) throw new Error(config.error?.message || '无法读取配置。');
+        if (!response.ok) {
+          if (response.status === 401) { closeLLMConfig(); renderAccountState({authenticated:false}); showAuth('login'); return; }
+          throw new Error(config.error?.message || '无法读取配置。');
+        }
         const modelInput = $('#apiModelInput');
+        currentLLMConfigured = Boolean(config.configured);
         modelInput.value = config.model;
         $('#apiBaseUrlInput').value = config.base_url;
         $('#apiKeyInput').value = '';
         $('#apiKeyInput').placeholder = config.configured ? '留空则保留当前 Key' : '输入 API Key';
         requestAnimationFrame(() => (config.configured ? modelInput : $('#apiKeyInput')).focus());
       } catch (error) {
-        $('#apiBaseUrlInput').value ||= 'https://ark.cn-beijing.volces.com/api/plan/v3';
-        $('#apiModelInput').value ||= 'doubao-seed-2.1-turbo';
-        setAPIStatus('','');
+        $('#apiBaseUrlInput').value = '';
+        $('#apiModelInput').value = '';
+        setAPIStatus('error',error.message || '无法读取配置。');
       }
     }
     function closeLLMConfig() {
@@ -753,6 +1332,7 @@
         const response = await fetch('/api/llm/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:fields.get('api_key'),base_url:fields.get('base_url'),model:fields.get('model')})});
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(response.status === 404 ? '配置接口不可用，请重启本地服务。' : payload.error?.message || '配置保存失败。');
+        currentLLMConfigured = Boolean(payload.configured);
         $('#apiKeyInput').value = '';
         $('#apiKeyInput').placeholder = '留空则保留当前 Key';
         if (!runTest) {
@@ -811,9 +1391,34 @@
         : '';
       showAIResponse(`${message}${results ? `<div class="ai-results">${results}</div>` : ''}${sourceHTML}${warnings}${modifyPlan}`);
     }
+    function buildAIModuleContext(container,suggestion) {
+      const fields = String(container.dataset.aiFields || '').split(',').map(field => field.trim()).filter(Boolean);
+      const sections = fields.map(field => {
+        const selector = RICH_SECTION_SELECTORS[field];
+        const text = selector ? $(selector)?.innerText?.replace(/\s+/g,' ').trim() : '';
+        return text ? `${AI_SELECTION_FIELDS[$(selector)?.id]?.[1] || field}：${text}` : '';
+      }).filter(Boolean);
+      return {
+        fields,
+        field_label:container.dataset.aiModule || '当前栏目',
+        text:sections.join('\n').slice(0,1800),
+        suggestion:String(suggestion || '').trim().slice(0,200)
+      };
+    }
     async function askTravelAI(query,options = {}) {
+      if (!currentAccount && !currentPublicDemoEnabled) {
+        showAIResponse('<p>冷启内容可以直接浏览。创建或修改行程前，请先登录并绑定你自己的模型 API。</p><div class="ai-actions"><button class="ai-action" type="button" data-ai-action="login">登录账号</button></div>');
+        showAuth('login');
+        return;
+      }
+      if (!currentLLMConfigured && !currentPublicDemoEnabled) {
+        showAIResponse('<p>这次操作需要使用你的模型 API。配置完成后再发送，不会消耗产品冷启额度。</p><div class="ai-actions"><button class="ai-action" type="button" data-ai-action="config">配置模型 API</button></div>');
+        await showLLMConfig();
+        return;
+      }
       const send = $('#aiSend');
       send.disabled = true;
+      document.querySelectorAll('.ai-suggestion').forEach(button => button.disabled = true);
       pendingAIAction = null;
       if (!options.applyAnswer) lastAIResponse = null;
       const stopProgress = startAIProgress();
@@ -827,15 +1432,20 @@
             conversation:aiConversation.slice(-12),
             profile:JSON.parse(localStorage.getItem('travel-profile') || '{}'),
             current_plan:{id:`destination-${targetIndex}`,...dataFor(targetIndex)},
-            action:options.applyAnswer ? 'apply_answer_to_current_plan' : options.selectionContext ? 'edit_selected_text' : undefined,
+            action:options.applyAnswer ? 'apply_answer_to_current_plan' : options.moduleContext ? 'edit_module' : options.selectionContext ? 'edit_selected_text' : undefined,
             answer_context:options.answerContext || undefined,
+            module_context:options.moduleContext || undefined,
             selection_context:options.selectionContext ? {text:options.selectionContext.text,field:options.selectionContext.field,field_label:options.selectionContext.field_label,item_index:options.selectionContext.item_index} : undefined,
             locale:document.documentElement.lang || 'zh-CN',
             timezone:Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai'
           })
         });
         const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload.error?.message || 'AI 服务暂时不可用。');
+        if (!response.ok) {
+          const error = new Error(payload.error?.message || 'AI 服务暂时不可用。');
+          error.status = response.status; error.code = payload.error?.code;
+          throw error;
+        }
         aiConversation.push({role:'user',content:query},{role:'assistant',content:payload.assistant_message});
         if (aiConversation.length > 24) aiConversation.splice(0,aiConversation.length - 24);
         if (options.applyAnswer) {
@@ -847,10 +1457,19 @@
           if (options.selectionContext) clearSelectedAIContext();
         }
       } catch (error) {
-        showAIResponse(`<p>${escapeHTML(error.message || '无法连接到 AI 服务。')}</p><div class="ai-warning">联网检索不会降级。请检查模型配置或稍后重试。</div><div class="ai-actions"><button class="ai-action" type="button" data-ai-action="config">检查 LLM 配置</button></div>`);
+        if (error.status === 401) renderAccountState({authenticated:false});
+        const needsLogin = error.status === 401;
+        const needsConfig = error.code === 'LLM_NOT_CONFIGURED' || error.code === 'INVALID_MODEL_CONFIG';
+        const actionHTML = needsLogin
+          ? '<div class="ai-actions"><button class="ai-action" type="button" data-ai-action="login">登录账号</button></div>'
+          : needsConfig
+            ? '<div class="ai-actions"><button class="ai-action" type="button" data-ai-action="config">检查模型配置</button></div>'
+            : '';
+        showAIResponse(`<p>${escapeHTML(error.message || '无法连接到 AI 服务。')}</p>${actionHTML}`);
       } finally {
         stopProgress();
         send.disabled = false;
+        document.querySelectorAll('.ai-suggestion').forEach(button => button.disabled = false);
         $('#aiInput').value = '';
       }
     }
@@ -906,6 +1525,7 @@
         if (patch.routes) item.routes = patch.routes.map(row => row.includes('|') ? row : `⌁|${row}`);
         if (patch.duration_days && !patch.overview) item.overview = buildOverview(item.city,patch.duration_days,patch.waypoint);
         if (patch.duration_days && !patch.title) item.title = `${item.city}${patch.duration_days}日旅行计划`;
+        item.content_origin = 'user-api';
         active = proposal.targetIndex;
         persistTravelPlans();
         renderEntry();
@@ -915,7 +1535,7 @@
       if (proposal.operation === 'create_plan') {
         const city = proposal.destination || patch.destination || '新旅程';
         const duration = patch.duration_days || 5;
-        const newItem = {city,color:planColors[destinations.length % planColors.length],date:'AI 新建旅行计划',title:patch.title || `${city}${duration}日旅行计划`,kicker:patch.kicker || `${duration}日旅行规划 · AI 检索生成`,intro:patch.intro || `这是一份为${city}准备的${duration}天旅行计划。`,overview:patch.overview || buildOverview(city,duration,patch.waypoint),highlights:patch.highlights || [...fallback.highlights],routes:(patch.routes || fallback.routes).map(row => row.includes('|') ? row : `⌁|${row}`),food:patch.food || [...fallback.food],accommodation:patch.accommodation || [...fallback.accommodation],daily_stays:patch.daily_stays || buildDailyStays(city,duration),packing:patch.packing || fallback.packing,quote:patch.quote || fallback.quote};
+        const newItem = {city,color:planColors[destinations.length % planColors.length],content_origin:'user-api',date:'AI 新建旅行计划',title:patch.title || `${city}${duration}日旅行计划`,kicker:patch.kicker || `${duration}日旅行规划 · AI 检索生成`,intro:patch.intro || `这是一份为${city}准备的${duration}天旅行计划。`,overview:patch.overview || buildOverview(city,duration,patch.waypoint),highlights:patch.highlights || [...fallback.highlights],routes:(patch.routes || fallback.routes).map(row => row.includes('|') ? row : `⌁|${row}`),food:patch.food || [...fallback.food],accommodation:patch.accommodation || [...fallback.accommodation],daily_stays:patch.daily_stays || buildDailyStays(city,duration),packing:patch.packing || fallback.packing,quote:patch.quote || fallback.quote};
         destinations.push(newItem);
         active = destinations.length - 1;
         persistTravelPlans();
@@ -953,6 +1573,11 @@
       if (open && panel === $('#searchPanel')) $('#searchInput').focus();
     }
     $('#menuButton').addEventListener('click',() => togglePanel($('#menuButton'),$('#menuPanel')));
+    $('#accountButton').addEventListener('click',async () => {
+      $('#menuPanel').classList.remove('open');
+      currentAccount ? await showLLMConfig() : showAuth('login');
+    });
+    $('#logoutButton').addEventListener('click',logoutAccount);
     $('#apiSettingsButton').addEventListener('click',async () => {
       $('#menuPanel').classList.remove('open');
       $('#menuButton').setAttribute('aria-expanded','false');
@@ -990,6 +1615,16 @@
       hideAISelectionTrigger();
       showSelectedAIContext(context);
     });
+    paper.addEventListener('click',async event => {
+      const button = event.target.closest('.ai-suggestion');
+      if (!button || button.disabled) return;
+      const container = button.closest('.ai-suggestions');
+      const suggestion = button.textContent.trim();
+      const moduleContext = buildAIModuleContext(container,suggestion);
+      setAIComposerOpen(true);
+      showAIResponse(`<p>已引用“${escapeHTML(moduleContext.field_label)}”全部内容，正在执行建议：${escapeHTML(suggestion)}</p>`);
+      await askTravelAI(suggestion,{moduleContext,targetIndex:active});
+    });
     $('#clearAISelection').addEventListener('click',clearSelectedAIContext);
     paper.addEventListener('mouseup',() => setTimeout(captureAISelection));
     paper.addEventListener('keyup',event => { if (event.shiftKey || ['Shift','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) setTimeout(captureAISelection); });
@@ -1006,7 +1641,23 @@
     });
     $('#apiDialogClose').addEventListener('click',closeLLMConfig);
     $('#apiModal').addEventListener('click',event => { if (event.target.matches('[data-api-close]')) closeLLMConfig(); });
-    document.addEventListener('keydown',event => { if (event.key === 'Escape' && !$('#apiModal').hidden) closeLLMConfig(); });
+    $('#authForm').addEventListener('submit',async event => { event.preventDefault(); await submitAuth(); });
+    $('#authSwitchButton').addEventListener('click',() => setAuthMode(authMode === 'login' ? 'register' : 'login'));
+    $('#authDialogClose').addEventListener('click',closeAuth);
+    $('#authModal').addEventListener('click',event => { if (event.target.matches('[data-auth-close]')) closeAuth(); });
+    $('#sharePlanButton').addEventListener('click',openShareModal);
+    $('#shareDialogClose').addEventListener('click',closeShareModal);
+    $('#shareModal').addEventListener('click',event => { if (event.target.matches('[data-share-close]')) closeShareModal(); });
+    $('#shareLinks').addEventListener('click',event => {
+      const button = event.target.closest('[data-copy-share]');
+      if (button) copyShareValue(button.dataset.copyShare,button);
+    });
+    document.addEventListener('keydown',event => {
+      if (event.key !== 'Escape') return;
+      if (!$('#apiModal').hidden) closeLLMConfig();
+      if (!$('#authModal').hidden) closeAuth();
+      if (!$('#shareModal').hidden) closeShareModal();
+    });
     $('#editPlanButton').addEventListener('click',startInlineEditing);
     $('#saveInlineEdit').addEventListener('click',saveInlineEditing);
     $('#cancelInlineEdit').addEventListener('click',cancelInlineEditing);
@@ -1094,10 +1745,35 @@
       if (action === 'cancel') { pendingAIAction = null; showAIResponse('<p>已取消，本次没有修改任何旅行记录。</p>'); }
       if (action === 'modify-from-answer') await modifyPlanFromAnswer(lastAIResponse);
       if (action === 'choose') await askTravelAI(`请为${button.dataset.city}创建一份旅行计划`);
+      if (action === 'login') showAuth('login');
       if (action === 'config') await showLLMConfig();
       if (action === 'dismiss-response') $('#aiResponse').classList.remove('show');
     });
-    renderEntry();
+    async function initializePage() {
+      if (isSharedPage) {
+        document.body.classList.add('shared-mode');
+        $('#shareModeBadge').textContent = sharedPageToken ? '共享行程 · 可编辑' : '共享行程 · 只读';
+        $('#editPlanButton').hidden = !sharedPageToken;
+        try {
+          await loadRemotePlan(sharedPageId,sharedPageToken,0);
+          destinations.splice(1);
+          active = 0;
+          document.title = `${destinations[0].city}旅行规划 · VoyageAI`;
+          renderEntry();
+        } catch (error) {
+          destinations.splice(0,destinations.length,{city:'分享不可用',title:'无法打开这份旅行规划',kicker:'链接可能不正确或分享已不存在',intro:error.message});
+          active = 0; $('#editPlanButton').hidden = true; renderEntry();
+        }
+        return;
+      }
+      await refreshAccountSession();
+      renderEntry();
+      const info = destinations[active]?._share;
+      if (info?.id) {
+        try { await loadRemotePlan(info.id,info.token,active); persistTravelPlans(); renderEntry(); } catch {}
+      }
+    }
+    initializePage();
   </script>
 </body>
 </html>

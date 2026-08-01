@@ -1,9 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createTravelAI, getConfig, validateConfig, validateRequest, responseSchemaForContext, isAccommodationRequest, hasAccommodationBudget, accommodationQueryMessage, wantsXiaohongshu, buildXiaohongshuQuery, buildXiaohongshuWebSearchQuery, buildAccommodationPriceWebSearchQuery } = require('../lib/travel-ai.cjs');
-const { createServer } = require('../server.cjs');
+const { createServer, searchPlaceImage } = require('../server.cjs');
 const skillContract = require('../skills/build-travel-ai-qa/scripts/travel-ai-contract.cjs');
 const { loadEnvFile } = require('../lib/load-env.cjs');
+const { createMemoryAccountStore, accountIdForEmail, decryptConfig } = require('../lib/account-store.cjs');
 
 function responseValue(overrides = {}) {
   return {
@@ -77,6 +78,18 @@ test('selected-text edits validate a bounded quote and force a modification prop
   const schema = responseSchemaForContext(request);
   assert.deepEqual(schema.properties.intent.enum, ['modify_current']);
   assert.deepEqual(schema.properties.requires_confirmation.enum, [true]);
+});
+
+test('module suggestions carry bounded complete module context and force a modification proposal', () => {
+  const request = validateRequest({
+    message: '换一批景点', action: 'edit_module',
+    current_plan: { id: 'destination-0', city: '京都', highlights: ['清水寺', '伏见稻荷'] },
+    module_context: { fields: ['highlights'], field_label: '必去清单', text: '清水寺 伏见稻荷', suggestion: '换一批景点' }
+  });
+  assert.equal(request.action, 'edit_module');
+  assert.deepEqual(request.module_context, { fields: ['highlights'], field_label: '必去清单', text: '清水寺 伏见稻荷', suggestion: '换一批景点' });
+  assert.deepEqual(responseSchemaForContext(request).properties.intent.enum, ['modify_current']);
+  assert.throws(() => validateRequest({ message: '修改', action: 'edit_module', current_plan: {}, module_context: { fields: ['unknown'], text: 'x', suggestion: 'y' } }), /栏目内容无效/);
 });
 
 test('system prompt requires detailed evidence-backed accommodation research', () => {
@@ -253,6 +266,20 @@ test('mock provider edits only the field containing selected text', async () => 
   assert.match(arrayValue.proposal.patch.plan.overview[1], /已按要求修改/);
 });
 
+test('mock provider applies a module suggestion only to its declared fields', async () => {
+  const ai = await createTravelAI();
+  const value = await ai.chat({
+    message: '住宿预算过高，帮我降低', action: 'edit_module',
+    current_plan: { id: 'destination-0', city: '京都', accommodation: ['京都站酒店'], daily_stays: ['Day 1｜京都站酒店｜¥1200/晚'], food: ['怀石料理'] },
+    module_context: { fields: ['accommodation', 'daily_stays'], field_label: '住宿安排', text: '京都站酒店，¥1200/晚', suggestion: '住宿预算过高，帮我降低' }
+  }, { LLM_PROVIDER: 'mock' });
+  assert.equal(value.intent, 'modify_current');
+  assert.equal(value.requires_confirmation, true);
+  assert.match(value.proposal.patch.plan.accommodation[0], /预算过高/);
+  assert.match(value.proposal.patch.plan.daily_stays[0], /预算过高/);
+  assert.equal(value.proposal.patch.plan.food, null);
+});
+
 test('mock provider applies answer suggestions as a material current-plan update', async () => {
   const ai = await createTravelAI();
   const currentPlan = {
@@ -380,7 +407,7 @@ test('HTTP endpoint connects the demo request to the AI service', async t => {
   assert.equal(payload.intent, 'answer_question');
 });
 
-test('HTTP endpoint fails closed when no API key is configured', async t => {
+test('HTTP endpoint requires an authenticated account outside mock mode', async t => {
   const server = createServer({ env: { LLM_PROVIDER: 'openai', LLM_API_KEY: '' } });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
@@ -388,21 +415,25 @@ test('HTTP endpoint fails closed when no API key is configured', async t => {
   const response = await fetch(`http://127.0.0.1:${port}/api/ai/chat`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: '推荐目的地' })
   });
-  assert.equal(response.status, 503);
+  assert.equal(response.status, 401);
   const payload = await response.json();
-  assert.equal(payload.error.code, 'LLM_NOT_CONFIGURED');
+  assert.equal(payload.error.code, 'AUTH_REQUIRED');
   assert.doesNotMatch(JSON.stringify(payload), /Bearer|api[_-]?key.*[A-Za-z0-9]{8}/i);
 });
 
-test('local LLM config endpoint stores the key in server memory without returning it', async t => {
+test('account-bound LLM config is encrypted, isolated behind a session, and never returned', async t => {
   let authorization = '';
+  const encryptionKey = Buffer.alloc(32, 7).toString('base64');
+  const accountStore = createMemoryAccountStore();
   const server = createServer({
     env: {
       LLM_PROVIDER: 'openai',
       LLM_API_KEY: '',
       LLM_MODEL: 'doubao-seed-2.1-turbo',
-      LLM_ALLOWED_MODELS: 'doubao-seed-2.0-lite,doubao-seed-2.1-turbo'
+      LLM_ALLOWED_MODELS: 'doubao-seed-2.0-lite,doubao-seed-2.1-turbo',
+      ACCOUNT_ENCRYPTION_KEY: encryptionKey
     },
+    accountStore,
     fetchImpl: async (_url, options) => {
       authorization = options.headers.authorization;
       return { ok: true, status: 200, json: async () => ({ output_text: JSON.stringify(responseValue()), output: [] }) };
@@ -412,11 +443,21 @@ test('local LLM config endpoint stores the key in server memory without returnin
   t.after(() => new Promise(resolve => server.close(resolve)));
   const { port } = server.address();
   const endpoint = `http://127.0.0.1:${port}/api/llm/config`;
-  const initial = await (await fetch(endpoint)).json();
+  const unauthenticated = await fetch(endpoint);
+  assert.equal(unauthenticated.status, 401);
+  const registration = await fetch(`http://127.0.0.1:${port}/api/auth/register`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'traveler@example.com', password: 'correct-horse-42' })
+  });
+  assert.equal(registration.status, 201);
+  const cookie = registration.headers.get('set-cookie').split(';')[0];
+  const initial = await (await fetch(endpoint, { headers: { cookie } })).json();
   assert.equal(initial.configured, false);
+  assert.equal(initial.base_url, '');
+  assert.equal(initial.model, '');
   assert.equal('api_key' in initial, false);
   const savedResponse = await fetch(endpoint, {
-    method: 'POST', headers: { 'content-type': 'application/json' },
+    method: 'POST', headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({ api_key: 'memory-only-secret', base_url: 'https://ark.cn-beijing.volces.com/api/plan/v3', model: 'doubao-seed-2.0-lite' })
   });
   assert.equal(savedResponse.status, 200);
@@ -424,13 +465,16 @@ test('local LLM config endpoint stores the key in server memory without returnin
   assert.equal(saved.configured, true);
   assert.equal(saved.model, 'doubao-seed-2.0-lite');
   assert.doesNotMatch(JSON.stringify(saved), /memory-only-secret/);
-  const testResponse = await fetch(`${endpoint}/test`, { method: 'POST' });
+  const stored = await accountStore.readAccount(accountIdForEmail('traveler@example.com'));
+  assert.doesNotMatch(JSON.stringify(stored.llmConfig), /memory-only-secret/);
+  assert.equal(decryptConfig(stored.llmConfig, encryptionKey).LLM_API_KEY, 'memory-only-secret');
+  const testResponse = await fetch(`${endpoint}/test`, { method: 'POST', headers: { cookie } });
   assert.equal(testResponse.status, 200);
   const tested = await testResponse.json();
   assert.equal(tested.ok, true);
   assert.equal(tested.model, 'doubao-seed-2.0-lite');
   await fetch(`http://127.0.0.1:${port}/api/ai/chat`, {
-    method: 'POST', headers: { 'content-type': 'application/json' },
+    method: 'POST', headers: { 'content-type': 'application/json', cookie },
     body: JSON.stringify({ message: '京都有什么推荐？' })
   });
   assert.equal(authorization, 'Bearer memory-only-secret');
@@ -445,6 +489,42 @@ test('static server never exposes environment or backend source files', async t 
     const response = await fetch(`http://127.0.0.1:${port}${pathname}`);
     assert.equal(response.status, 404, pathname);
   }
+  const image = await fetch(`http://127.0.0.1:${port}/assets/highlights/arashiyama-bamboo.jpg`);
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get('content-type'), 'image/jpeg');
+  assert.equal(image.headers.get('cache-control'), 'no-store');
+  assert.ok((await image.arrayBuffer()).byteLength > 100_000);
+});
+
+test('place image search only accepts a title matching the attraction text', async () => {
+  const fetchImpl = async url => {
+    assert.match(String(url), /zh\.wikipedia\.org\/w\/api\.php/);
+    return {
+      ok: true,
+      async json() {
+        return { query: { pages: [
+          { title: '京都', thumbnail: { source: 'https://upload.wikimedia.org/city.jpg' } },
+          { title: '清水寺', thumbnail: { source: 'https://upload.wikimedia.org/kiyomizu.jpg' } }
+        ] } };
+      }
+    };
+  };
+  const result = await searchPlaceImage('京都','清水寺',fetchImpl);
+  assert.equal(result.matched,true);
+  assert.equal(result.article_title,'清水寺');
+  assert.equal(result.image_url,'https://upload.wikimedia.org/kiyomizu.jpg');
+
+  const aliasResult = await searchPlaceImage('京都','金阁寺',async () => ({
+    ok:true,
+    async json() {
+      return { query: { pages: [
+        { title:'清水寺', thumbnail:{ source:'https://upload.wikimedia.org/wrong.jpg' } },
+        { title:'鹿苑寺', thumbnail:{ source:'https://upload.wikimedia.org/kinkakuji.jpg' } }
+      ] } };
+    }
+  }));
+  assert.equal(aliasResult.article_title,'鹿苑寺');
+  assert.equal(aliasResult.image_url,'https://upload.wikimedia.org/kinkakuji.jpg');
 });
 
 test('browser code calls the backend and no longer invokes the keyword mock', () => {
@@ -471,8 +551,72 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /id="accommodationList"/);
   assert.match(html, /id="dailyStayList"/);
   assert.match(html, /function renderDailyStays\(items\)/);
+  assert.match(html, /class="editable-region highlight-grid" id="highlightList"/);
+  assert.match(html, /id="highlightPrevious"/);
+  assert.match(html, /id="highlightNext"/);
+  assert.match(html, /id="highlightPosition"/);
+  assert.match(html, /function renderHighlights\(city,items,options = \{\}\)/);
+  assert.match(html, /item\.content_origin = 'cold-start'/);
+  assert.match(html, /cardsWithoutImages\.length/);
+  assert.match(html, /优先匹配景点现成图片，找不到再生成/);
+  assert.match(html, /content_origin:'user-api'/);
+  assert.match(html, /if \(!currentAccount && !currentPublicDemoEnabled\)[\s\S]*绑定你自己的模型 API/);
+  assert.match(html, /if \(!currentLLMConfigured && !currentPublicDemoEnabled\)[\s\S]*这次操作需要使用你的模型 API/);
+  assert.match(html, /function matchHighlightCardImage\(card,city,place\)/);
+  assert.match(html, /function generatedPlaceImageURL\(city,place,attempt = 0\)/);
+  assert.match(html, /image\.pollinations\.ai\/prompt/);
+  assert.match(html, /width:'1536',height:'1920'/);
+  assert.match(html, /function isHighResolutionImage\(image,portrait = false\)/);
+  assert.match(html, /function isUsablePlaceImage\(image\)/);
+  assert.match(html, /image\.width >= 240 && image\.height >= 180/);
+  assert.match(html, /image\.width >= 1400 && image\.height >= 1750/);
+  assert.match(html, /dataset\.imageSource = source/);
+  assert.match(html, /'generated'/);
+  assert.match(html, /'searched'/);
+  assert.match(html, /'local-verified'/);
+  assert.match(html, /data-image-source="\$\{imageSource\}"/);
+  assert.match(html, /markHighlightCardUnavailable/);
+  assert.match(html, /图片好像迷路啦 🧭/);
+  assert.match(html, /重新找一张匹配图片/);
+  assert.match(html, /dataset\.imageQuality = highResolution \? 'high' : 'low'/);
+  const imageMatcher = html.slice(html.indexOf('async function matchHighlightCardImage'),html.indexOf('async function matchHighlightImages'));
+  assert.ok(imageMatcher.indexOf('verifiedPlaceImage(city,place)') < imageMatcher.indexOf('generatedPlaceImageURL(city,place'), 'Web Search must run before image generation');
+  assert.match(html, /placeImageRequests\.delete\(`\$\{city\}\|\$\{place\}`\)/);
+  assert.doesNotMatch(html, /cityImages\[index\s*%\s*cityImages\.length\]/);
+  assert.doesNotMatch(html, /KYOTO_HIGHLIGHT_IMAGES/);
+  assert.doesNotMatch(html, /金阁寺[^\n]*kiyomizu-dera\.jpg/);
+  assert.match(html, /\[\['金阁寺','鹿苑寺'\],'assets\/highlights\/kinkakuji\.png'\]/);
+  assert.match(html, /\[\['南禅寺'\],'assets\/highlights\/nanzenji\.png'\]/);
+  assert.match(html, /\[\['哲学之道'\],'assets\/highlights\/philosophers-path\.png'\]/);
+  assert.match(html, /\[\['祇园花见小路','花见小路'\],'assets\/highlights\/gion-hanamikoji\.png'\]/);
+  assert.match(html, /const coldStartOverviewCards = \{/);
+  assert.match(html, /\[\['伊斯坦布尔历史城区'\],'assets\/highlights\/istanbul\.jpg'\]/);
+  assert.match(html, /\[\['阿那亚海滩'\],'assets\/highlights\/aranya\.jpg'\]/);
+  assert.match(html, /\[\['多瑙河两岸'\],'assets\/highlights\/budapest\.jpg'\]/);
+  assert.doesNotMatch(html, /\[\[[^\n]*奈良[^\n]*\],'assets\/highlights\/nara\.jpg'\]/);
+  assert.match(html, /const \{title\} = highlightParts\(item\);\s*const matched = HIGHLIGHT_IMAGE_RULES/);
+  assert.match(html, /function searchPlaceImageInBrowser\(city,place\)/);
+  assert.match(html, /zh\.wikipedia\.org\/api\/rest_v1\/page\/summary/);
+  assert.match(html, /\/api\/place-image\?city=/);
+  assert.match(html, /card\.dataset\.imageMatched = 'true'/);
+  assert.match(html, /const highlights = Array\.isArray\(items\) \? items : \[\]/);
+  assert.match(html, /const PLACE_IMAGE_CACHE_KEY = 'travel-highlight-images-v1'/);
+  assert.match(html, /cachePlaceImage\(city,place/);
+  assert.match(html, /data-image-index="\$\{index\}"/);
+  assert.match(html, /const cardsWithoutImages = \[\.\.\.track\.children\]\.filter/);
+  assert.doesNotMatch(html, /if \(!options\.coldStart\) void matchHighlightImages/);
+  assert.match(html, /highlights\.map\(\(item,index\) =>/);
+  assert.match(html, /class="highlight-card"/);
+  assert.match(html, /loading="eager"/);
+  assert.match(html, /height:clamp\(320px,70vw,440px\)/);
+  assert.match(html, /background-image:url/);
+  assert.match(html, /position:absolute;inset:0;display:block;width:100%;height:100%/);
+  assert.match(html, /assets\/highlights\/kiyomizu-dera\.jpg/);
+  assert.match(html, /renderHighlights\(data\.city,data\.highlights,\{coldStart:data\.content_origin === 'cold-start'\}\)/);
   assert.match(html, /function buildDailyStays\(city,duration\)/);
   assert.match(html, /function deduplicateDestinations\(\)/);
+  assert.match(html, /const coldStartTemplates = new Map\(destinations\.map/);
+  assert.match(html, /城市代表街区\|经典地标/);
   assert.match(html, /restoreTravelPlans\(\);\s*deduplicateDestinations\(\);/);
   assert.match(html, /const DEFAULT_CURRENCY = \{ code:'CNY', label:'人民币', symbol:'¥' \}/);
   assert.match(html, /ALLOWED_EDITOR_CLASSES/);
@@ -489,6 +633,16 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /function planPatchChangesItem\(item,patch\)/);
   assert.match(html, /options\.selectionContext \? 'edit_selected_text'/);
   assert.match(html, /selection_context:options\.selectionContext/);
+  assert.equal((html.match(/class="ai-suggestions"/g) || []).length, 6);
+  assert.match(html, />列出详细的日程规划表<\/button>/);
+  assert.match(html, />换一批景点<\/button>/);
+  assert.match(html, />换一批美食<\/button>/);
+  assert.match(html, />帮我规划好路线<\/button>/);
+  assert.match(html, />住宿预算过高，帮我降低<\/button>/);
+  assert.match(html, />住宿预算过低，帮我升级<\/button>/);
+  assert.match(html, /options\.moduleContext \? 'edit_module'/);
+  assert.match(html, /module_context:options\.moduleContext/);
+  assert.match(html, /await askTravelAI\(suggestion,\{moduleContext,targetIndex:active\}\)/);
   assert.match(html, /id="aiSelectionTrigger"[^>]*hidden>问 AI<\/button>/);
   assert.match(html, /id="aiSelectionQuote"[^>]*hidden/);
   assert.match(html, /function captureAISelection\(\)/);
@@ -496,7 +650,10 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /pendingAIAction = \{\.\.\.payload\.proposal,targetIndex:options\.targetIndex\};\s*executePendingAIAction\(\)/);
   assert.match(html, /修改内容：\$\{escapeHTML\(proposal\.summary\)\}/);
   assert.match(html, /if \(!open\) \$\('#aiResponse'\)\.classList\.remove\('show'\)/);
-  assert.match(html, /id="apiSettingsButton"[^>]*>API 设置<\/button>/);
+  assert.match(html, /id="apiSettingsButton"[^>]*>模型 API 设置<\/button>/);
+  assert.match(html, /id="authModal"[^>]*hidden/);
+  assert.match(html, /fetch\(`\/api\/auth\/\$\{authMode\}`/);
+  assert.match(html, /fetch\('\/api\/auth\/session'/);
   assert.match(html, /id="apiModal"[^>]*hidden/);
   assert.match(html, />保存并测试<\/button>/);
   assert.match(html, /id="apiModelInput"[^>]*name="model"[^>]*type="text"/);
