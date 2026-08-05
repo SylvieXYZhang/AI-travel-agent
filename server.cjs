@@ -25,6 +25,78 @@ const types = {
 const rateLimits = new Map();
 const dailyLimits = new Map();
 const placeImageCache = new Map();
+const ACCOUNT_STATE_MAX_BYTES = 1536 * 1024;
+const ACCOUNT_PROFILE_MAX_BYTES = 64 * 1024;
+
+function jsonBytes(value) {
+  return Buffer.byteLength(JSON.stringify(value), 'utf8');
+}
+
+function normalizeAccountProfile(value) {
+  if (value === undefined || value === null) return {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new AccountError('INVALID_ACCOUNT_STATE', '账号旅行偏好格式不正确。');
+  }
+  let copy;
+  try { copy = JSON.parse(JSON.stringify(value)); }
+  catch { throw new AccountError('INVALID_ACCOUNT_STATE', '账号旅行偏好格式不正确。'); }
+  if (jsonBytes(copy) > ACCOUNT_PROFILE_MAX_BYTES) throw new AccountError('ACCOUNT_STATE_TOO_LARGE', '账号旅行偏好内容过大。', 413);
+  return copy;
+}
+
+function normalizeAccountPlan(value) {
+  const plan = normalizePlan(value);
+  if (value.content_origin === 'cold-start' || value.content_origin === 'user-api' || value.content_origin === 'user-edit') {
+    plan.content_origin = value.content_origin;
+  }
+  if (value._share !== undefined) {
+    const share = value._share;
+    if (!share || typeof share !== 'object' || Array.isArray(share) || !SHARE_ID_PATTERN.test(String(share.id || '')) ||
+        typeof share.token !== 'string' || share.token.length > 128 || !Number.isSafeInteger(share.version) || share.version < 1) {
+      throw new AccountError('INVALID_ACCOUNT_STATE', '账号中的分享计划信息格式不正确。');
+    }
+    plan._share = { id: String(share.id), token: share.token, version: share.version };
+  }
+  return plan;
+}
+
+function normalizeAccountState(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new AccountError('INVALID_ACCOUNT_STATE', '账号页面状态格式不正确。');
+  if (!Array.isArray(value.plans) || value.plans.length < 1 || value.plans.length > 40) {
+    throw new AccountError('INVALID_ACCOUNT_STATE', '账号旅行计划数量不正确。');
+  }
+  const plans = value.plans.map(normalizeAccountPlan);
+  const profile = normalizeAccountProfile(value.profile);
+  const profilePhoto = value.profile_photo === undefined || value.profile_photo === null ? '' : String(value.profile_photo);
+  if (profilePhoto && (!/^data:image\/(?:png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(profilePhoto) || profilePhoto.length > 700_000)) {
+    throw new AccountError('INVALID_ACCOUNT_STATE', '账号头像格式不正确或文件过大。');
+  }
+  const activeIndex = Number.isSafeInteger(value.active_index) && value.active_index >= 0 && value.active_index < plans.length ? value.active_index : 0;
+  const state = { plans, profile, profile_photo: profilePhoto, active_index: activeIndex };
+  if (jsonBytes(state) > ACCOUNT_STATE_MAX_BYTES) throw new AccountError('ACCOUNT_STATE_TOO_LARGE', '账号页面内容过大，请压缩或移除较大的本地图片。', 413);
+  return state;
+}
+
+function accountStateForStorage(state, encryptionKey) {
+  const stored = JSON.parse(JSON.stringify(state));
+  for (const plan of stored.plans) {
+    if (!plan._share?.token) continue;
+    plan._share.encrypted_token = encryptConfig({ token: plan._share.token }, encryptionKey);
+    delete plan._share.token;
+  }
+  return stored;
+}
+
+function accountStateForClient(state, encryptionKey) {
+  if (!state) return null;
+  const exposed = JSON.parse(JSON.stringify(state));
+  for (const plan of exposed.plans || []) {
+    if (!plan._share?.encrypted_token) continue;
+    plan._share.token = decryptConfig(plan._share.encrypted_token, encryptionKey)?.token || '';
+    delete plan._share.encrypted_token;
+  }
+  return exposed;
+}
 
 function compactPlaceName(value) {
   return String(value || '').normalize('NFKC').toLowerCase().replace(/[\s·•・—–\-_:：,，.。()（）【】\[\]]/g, '');
@@ -157,7 +229,7 @@ function readJson(req, maxBytesOverride) {
 }
 
 function safeError(error) {
-  const safeCodes = new Set(['INVALID_REQUEST', 'INVALID_MESSAGE', 'MESSAGE_TOO_LONG', 'INVALID_CONVERSATION', 'INVALID_MODULE_CONTEXT', 'BODY_TOO_LARGE', 'INVALID_JSON', 'INVALID_LLM_CONFIG', 'INVALID_MODEL_CONFIG', 'INVALID_PLAN_UPDATE', 'LLM_NOT_CONFIGURED', 'LLM_TIMEOUT', 'LLM_TEST_TIMEOUT', 'LLM_NETWORK_ERROR', 'INVALID_SHARED_PLAN', 'SHARED_PLAN_TOO_LARGE', 'SHARE_NOT_FOUND', 'SHARE_EDIT_FORBIDDEN', 'SHARE_CONFLICT', 'SHARE_ID_COLLISION', 'INVALID_EMAIL', 'INVALID_PASSWORD', 'ACCOUNT_EXISTS', 'INVALID_CREDENTIALS', 'AUTH_REQUIRED', 'ACCOUNT_ENCRYPTION_UNAVAILABLE', 'ACCOUNT_CONFIG_UNREADABLE']);
+  const safeCodes = new Set(['INVALID_REQUEST', 'INVALID_MESSAGE', 'MESSAGE_TOO_LONG', 'INVALID_CONVERSATION', 'INVALID_MODULE_CONTEXT', 'BODY_TOO_LARGE', 'INVALID_JSON', 'INVALID_LLM_CONFIG', 'INVALID_MODEL_CONFIG', 'INVALID_PLAN_UPDATE', 'LLM_NOT_CONFIGURED', 'LLM_TIMEOUT', 'LLM_TEST_TIMEOUT', 'LLM_NETWORK_ERROR', 'INVALID_SHARED_PLAN', 'SHARED_PLAN_TOO_LARGE', 'SHARE_NOT_FOUND', 'SHARE_EDIT_FORBIDDEN', 'SHARE_CONFLICT', 'SHARE_ID_COLLISION', 'INVALID_EMAIL', 'INVALID_PASSWORD', 'ACCOUNT_EXISTS', 'INVALID_CREDENTIALS', 'AUTH_REQUIRED', 'INVALID_ACCOUNT_STATE', 'ACCOUNT_STATE_TOO_LARGE', 'ACCOUNT_STATE_CONFLICT', 'ACCOUNT_CONFLICT', 'ACCOUNT_ENCRYPTION_UNAVAILABLE', 'ACCOUNT_CONFIG_UNREADABLE']);
   return {
     status: error instanceof TravelAIError || error instanceof ShareError || error instanceof AccountError ? error.status : 500,
     code: error instanceof TravelAIError || error instanceof ShareError || error instanceof AccountError ? error.code : 'INTERNAL_ERROR',
@@ -259,7 +331,10 @@ function createServer(options = {}) {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/health') {
         if (!['GET', 'HEAD'].includes(req.method)) return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
-        return json(res, 200, { status: 'ok', share_store: shareStore.kind, account_store: accountStore.kind, public_demo_enabled: publicDemoEnabled(runtimeEnv) });
+        return json(res, 200, {
+          status: 'ok', share_store: shareStore.kind, account_store: accountStore.kind,
+          account_state_persistence: true, public_demo_enabled: publicDemoEnabled(runtimeEnv)
+        });
       }
       if (url.pathname === '/api/place-image') {
         if (req.method !== 'GET') return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
@@ -304,6 +379,29 @@ function createServer(options = {}) {
         const token = parseCookies(req.headers.cookie)[SESSION_COOKIE];
         if (token) await accountStore.deleteSession(sessionIdForToken(token));
         return json(res, 200, { authenticated: false }, { 'set-cookie': sessionCookie('', { secure: secureCookies, maxAge: 0 }) });
+      }
+      if (url.pathname === '/api/account/state') {
+        const auth = await authenticatedAccount(req);
+        if (!auth) throw new AccountError('AUTH_REQUIRED', '请先登录账号。', 401);
+        const version = Number.isSafeInteger(auth.account.pageStateVersion) ? auth.account.pageStateVersion : 0;
+        if (req.method === 'GET') return json(res, 200, {
+          version, state: accountStateForClient(auth.account.pageState, runtimeEnv.ACCOUNT_ENCRYPTION_KEY)
+        });
+        if (req.method !== 'PUT') return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
+        if (!String(req.headers['content-type'] || '').toLowerCase().includes('application/json')) return json(res, 415, { error: { code: 'UNSUPPORTED_MEDIA_TYPE', message: '请使用 application/json。' } });
+        const body = await readJson(req, ACCOUNT_STATE_MAX_BYTES + 16 * 1024);
+        if (!Number.isSafeInteger(body?.version) || body.version !== version) {
+          throw new AccountError('ACCOUNT_STATE_CONFLICT', '该账号页面已在其他位置更新，请刷新后重试。', 409);
+        }
+        auth.account.pageState = accountStateForStorage(normalizeAccountState(body.state), runtimeEnv.ACCOUNT_ENCRYPTION_KEY);
+        auth.account.pageStateVersion = version + 1;
+        auth.account.updatedAt = new Date().toISOString();
+        try { await accountStore.saveAccount(auth.account); }
+        catch (error) {
+          if (error.code === 'ACCOUNT_CONFLICT') throw new AccountError('ACCOUNT_STATE_CONFLICT', '该账号页面已在其他位置更新，请刷新后重试。', 409);
+          throw error;
+        }
+        return json(res, 200, { version: auth.account.pageStateVersion, updated_at: auth.account.updatedAt });
       }
       if (url.pathname === '/api/shares') {
         if (req.method !== 'POST') return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });

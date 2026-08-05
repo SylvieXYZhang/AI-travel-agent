@@ -493,7 +493,7 @@
       if (overviewCard && Array.isArray(item.highlights)) item.highlights = [overviewCard,...item.highlights];
     });
     const COLD_START_DESTINATION_COUNT = destinations.length;
-    const COLD_START_CITY_NAMES = destinations.map(item => item.city);
+    const coldStartDestinations = JSON.parse(JSON.stringify(destinations));
     const fallback = {
       date:'2025年旅行手账',
       intro:'把目的地拆成可以慢慢体验的日常：留出步行、偶遇与发呆的时间，也为最想看的风景保留最好的光线。',
@@ -506,14 +506,20 @@
       packing:'轻装、舒适步行鞋、薄外套、充电设备和可重复使用的水瓶。提前下载离线地图，并保存住宿与交通信息。',
       quote:'好旅程不是打卡更多，而是记住更多。'
     };
-    const PLAN_STORAGE_KEY = 'travel-plans-v1';
     const SHARE_MAX_BYTES = 512 * 1024;
+    const LEGACY_PLAN_STORAGE_KEY = 'travel-plans-v1';
+    const LEGACY_PROFILE_STORAGE_KEY = 'travel-profile';
+    const LEGACY_PHOTO_STORAGE_KEY = 'travel-profile-photo';
     const sharedPageId = new URLSearchParams(location.search).get('share');
     const sharedPageToken = new URLSearchParams(location.hash.replace(/^#/, '')).get('edit');
     const isSharedPage = Boolean(sharedPageId);
     let currentAccount = null;
     let currentLLMConfigured = false;
     let currentPublicDemoEnabled = false;
+    let accountStateVersion = 0;
+    let accountProfile = {};
+    let accountProfilePhoto = '';
+    let accountStateSaveChain = Promise.resolve();
     let authMode = 'login';
     const DEFAULT_CURRENCY = { code:'CNY', label:'人民币', symbol:'¥' };
     function deduplicateDestinations() {
@@ -525,30 +531,81 @@
       });
       destinations.splice(0,destinations.length,...unique);
     }
-    function restoreTravelPlans() {
+    function resetToColdStartState() {
+      destinations.splice(0,destinations.length,...JSON.parse(JSON.stringify(coldStartDestinations)));
+      accountStateVersion = 0;
+      accountProfile = {};
+      accountProfilePhoto = '';
+      active = 0;
+      clearProfilePhoto();
+    }
+    function readLegacyAccountState() {
       try {
-        const saved = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || 'null');
-        if (!Array.isArray(saved) || !saved.length) return;
-        const coldStartTemplates = new Map(destinations.map(item => [item.city,item]));
-        const valid = saved.filter(item => item && typeof item === 'object' && typeof item.city === 'string' && item.city.trim());
-        valid.forEach((item,index) => {
-          if (!item.content_origin) item.content_origin = COLD_START_CITY_NAMES[index] === item.city ? 'cold-start' : 'user-api';
-          const template = coldStartTemplates.get(item.city);
-          const hasLegacyGenericHighlights = Array.isArray(item.highlights) && item.highlights.some(row => /城市代表街区|经典地标/.test(String(row)));
-          if (item.content_origin === 'cold-start' && template && (!Array.isArray(item.highlights) || hasLegacyGenericHighlights)) {
-            item.highlights = [...template.highlights];
-          }
-        });
-        if (valid.length) destinations.splice(0,destinations.length,...valid);
-      } catch {}
+        const savedPlans = JSON.parse(localStorage.getItem(LEGACY_PLAN_STORAGE_KEY) || 'null');
+        const savedProfile = JSON.parse(localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY) || 'null');
+        const savedPhoto = localStorage.getItem(LEGACY_PHOTO_STORAGE_KEY) || '';
+        const plans = Array.isArray(savedPlans)
+          ? savedPlans.filter(item => item && typeof item === 'object' && typeof item.city === 'string' && item.city.trim())
+          : [];
+        if (!plans.length && (!savedProfile || typeof savedProfile !== 'object' || Array.isArray(savedProfile)) && !savedPhoto) return null;
+        plans.forEach(item => { if (!item.content_origin) item.content_origin = 'user-edit'; });
+        return {
+          plans:plans.length ? plans : JSON.parse(JSON.stringify(coldStartDestinations)),
+          profile:savedProfile && typeof savedProfile === 'object' && !Array.isArray(savedProfile) ? savedProfile : {},
+          profile_photo:savedPhoto,
+          active_index:0
+        };
+      } catch { return null; }
+    }
+    function clearLegacyAccountState() {
+      localStorage.removeItem(LEGACY_PLAN_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_PROFILE_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_PHOTO_STORAGE_KEY);
+    }
+    async function loadAccountPageState() {
+      resetToColdStartState();
+      if (!currentAccount) return;
+      const payload = await apiJSON('/api/account/state');
+      accountStateVersion = Number(payload.version) || 0;
+      if (payload.state?.plans?.length) {
+        destinations.splice(0,destinations.length,...payload.state.plans);
+        deduplicateDestinations();
+        accountProfile = payload.state.profile && typeof payload.state.profile === 'object' ? payload.state.profile : {};
+        accountProfilePhoto = payload.state.profile_photo || '';
+        active = Number.isInteger(payload.state.active_index) && payload.state.active_index < destinations.length ? payload.state.active_index : 0;
+        if (accountProfilePhoto) showProfilePhoto(accountProfilePhoto);
+        return;
+      }
+      const legacy = readLegacyAccountState();
+      if (legacy) {
+        destinations.splice(0,destinations.length,...legacy.plans);
+        deduplicateDestinations();
+        accountProfile = legacy.profile;
+        accountProfilePhoto = legacy.profile_photo;
+        active = legacy.active_index;
+        if (accountProfilePhoto) showProfilePhoto(accountProfilePhoto);
+        try {
+          await persistTravelPlans();
+          clearLegacyAccountState();
+        } catch (error) {
+          showAIResponse(`<p>旧版浏览器数据暂未迁移到账号：${escapeHTML(error.message)}</p>`);
+        }
+      }
     }
     function persistTravelPlans() {
-      try {
-        localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(destinations));
+      if (!currentAccount) return Promise.reject(new Error('请先登录，页面修改才会保存到你的账号。'));
+      const accountId = currentAccount.id;
+      const save = async () => {
+        if (currentAccount?.id !== accountId) throw new Error('账号已切换，请重新保存。');
+        const payload = await apiJSON('/api/account/state',{
+          method:'PUT',headers:{'content-type':'application/json'},
+          body:JSON.stringify({version:accountStateVersion,state:{plans:destinations,profile:accountProfile,profile_photo:accountProfilePhoto,active_index:active}})
+        });
+        accountStateVersion = payload.version;
         return true;
-      } catch {
-        return false;
-      }
+      };
+      accountStateSaveChain = accountStateSaveChain.then(save,save);
+      return accountStateSaveChain;
     }
     function shareablePlan(index = active) {
       const data = dataFor(index);
@@ -588,6 +645,7 @@
     }
     function closeShareModal() { $('#shareModal').hidden = true; }
     async function openShareModal() {
+      if (!currentAccount && !isSharedPage) { showAuth('login'); return; }
       $('#shareModal').hidden = false;
       $('#shareLinks').hidden = true;
       const item = destinations[active];
@@ -600,7 +658,7 @@
           method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({plan})
         });
         item._share = {id:created.id,token:created.edit_token,version:created.version};
-        persistTravelPlans();
+        await persistTravelPlans();
         showShareLinks(item._share);
       } catch (error) { setShareStatus(error.message,'error'); }
     }
@@ -632,7 +690,6 @@
       destinations[index] = {...remote.plan,_share:{id,token:token || '',version:remote.version}};
       return remote;
     }
-    restoreTravelPlans();
     deduplicateDestinations();
     const initialDestinationCount = COLD_START_DESTINATION_COUNT;
     let active = 0;
@@ -732,6 +789,7 @@
     }
     function setInlineEditorStatus(message) { $('#inlineEditorStatus').textContent = message || ''; }
     function startInlineEditing() {
+      if (!currentAccount && !isSharedPage) { showAuth('login'); return; }
       paper.classList.add('editing');
       $('#editPlanButton').hidden = true;
       $('#inlineEditorToolbar').hidden = false;
@@ -759,6 +817,7 @@
     async function saveInlineEditing() {
       const item = destinations[active];
       if (!item) return;
+      const itemBeforeEdit = JSON.parse(JSON.stringify(item));
       const richSections = {};
       for (const [field,selector] of Object.entries(RICH_SECTION_SELECTORS)) {
         const element = $(selector);
@@ -790,9 +849,13 @@
         return;
       }
       if (!isSharedPage) {
-        if (!persistTravelPlans()) {
+        try {
+          item.content_origin = 'user-edit';
+          await persistTravelPlans();
+        } catch (error) {
+          destinations[active] = itemBeforeEdit;
           saveButton.disabled = false; saveButton.textContent = '保存修改';
-          setInlineEditorStatus('保存失败：内容可能过大，请减少本地图片后重试。'); return;
+          setInlineEditorStatus(`保存失败：${error.message}`); return;
         }
       }
       saveButton.disabled = false; saveButton.textContent = '保存修改';
@@ -1143,8 +1206,9 @@
       paper.classList.add('changing');
       const info = destinations[active]?._share;
       if (!isSharedPage && info?.id) {
-        try { await loadRemotePlan(info.id,info.token,active); persistTravelPlans(); } catch {}
+        try { await loadRemotePlan(info.id,info.token,active); } catch {}
       }
+      if (!isSharedPage && currentAccount) await persistTravelPlans().catch(() => {});
       setTimeout(() => { renderEntry(); paper.classList.remove('changing'); },140);
     }
     const planColors = ['#e5cba7','#d8e4b5','#d9d3e7','#efcbd0','#cbd4e9','#c9ddd2'];
@@ -1242,7 +1306,7 @@
       authMode = mode;
       const registering = mode === 'register';
       $('#authDialogTitle').textContent = registering ? '创建 VoyageAI 账号' : '登录 VoyageAI';
-      $('#authDialogSubtitle').textContent = registering ? '账号用于安全绑定你的模型 API 配置。' : '登录后使用当前账号专属的模型配置。';
+      $('#authDialogSubtitle').textContent = registering ? '账号用于保存你的旅行手账、偏好和模型 API 配置。' : '登录后恢复当前账号专属的旅行手账与模型配置。';
       $('#authSubmit').textContent = registering ? '创建并登录' : '登录';
       $('#authSwitchText').textContent = registering ? '已经有账号？' : '还没有账号？';
       $('#authSwitchButton').textContent = registering ? '返回登录' : '创建账号';
@@ -1270,6 +1334,8 @@
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error?.message || '账号操作失败。');
         renderAccountState(payload);
+        await loadAccountPageState();
+        renderEntry();
         form.reset();
         closeAuth();
         if (!payload.llm_configured && !payload.public_demo_enabled) await showLLMConfig();
@@ -1282,6 +1348,8 @@
     async function logoutAccount() {
       await fetch('/api/auth/logout',{method:'POST'}).catch(() => {});
       renderAccountState({authenticated:false});
+      resetToColdStartState();
+      renderEntry();
       $('#menuPanel').classList.remove('open');
       showAuth('login');
     }
@@ -1430,7 +1498,7 @@
           body:JSON.stringify({
             message:query,
             conversation:aiConversation.slice(-12),
-            profile:JSON.parse(localStorage.getItem('travel-profile') || '{}'),
+            profile:accountProfile,
             current_plan:{id:`destination-${targetIndex}`,...dataFor(targetIndex)},
             action:options.applyAnswer ? 'apply_answer_to_current_plan' : options.moduleContext ? 'edit_module' : options.selectionContext ? 'edit_selected_text' : undefined,
             answer_context:options.answerContext || undefined,
@@ -1451,7 +1519,7 @@
         if (options.applyAnswer) {
           if (payload.intent !== 'modify_current' || !payload.requires_confirmation || !payload.proposal) throw new Error('AI 未能生成可应用的行程修改。');
           pendingAIAction = {...payload.proposal,targetIndex:options.targetIndex};
-          executePendingAIAction();
+          await executePendingAIAction();
         } else {
           renderAIResult(payload,targetIndex);
           if (options.selectionContext) clearSelectedAIContext();
@@ -1502,10 +1570,25 @@
         ? `Day ${index + 1}｜返程日，不安排住宿｜${DEFAULT_CURRENCY.label} ${DEFAULT_CURRENCY.symbol}0`
         : `Day ${index + 1}｜${city}交通便利区域住宿｜${DEFAULT_CURRENCY.label}价格待检索`);
     }
-    function executePendingAIAction() {
+    async function executePendingAIAction() {
       if (!pendingAIAction) return;
+      if (!currentAccount) { showAuth('login'); return; }
       const proposal = pendingAIAction;
       pendingAIAction = null;
+      const plansBeforeChange = JSON.parse(JSON.stringify(destinations));
+      const activeBeforeChange = active;
+      const profileBeforeChange = JSON.parse(JSON.stringify(accountProfile));
+      async function saveOrRollback() {
+        try { await persistTravelPlans(); return true; }
+        catch (error) {
+          destinations.splice(0,destinations.length,...plansBeforeChange);
+          active = activeBeforeChange;
+          accountProfile = profileBeforeChange;
+          renderEntry();
+          showAIResponse(`<p>修改未保存，页面已恢复：${escapeHTML(error.message)}</p>`);
+          return false;
+        }
+      }
       const patch = normalizedPlanPatch(proposal);
       if (proposal.operation === 'modify_current') {
         const item = destinations[proposal.targetIndex];
@@ -1527,7 +1610,7 @@
         if (patch.duration_days && !patch.title) item.title = `${item.city}${patch.duration_days}日旅行计划`;
         item.content_origin = 'user-api';
         active = proposal.targetIndex;
-        persistTravelPlans();
+        if (!await saveOrRollback()) return;
         renderEntry();
         showAIResponse(`<p>已更新 <em>${escapeHTML(item.city)}</em> 的当前旅行记录。</p>${proposal.summary ? `<p><em>修改内容：${escapeHTML(proposal.summary)}</em></p>` : ''}`);
         return;
@@ -1538,14 +1621,14 @@
         const newItem = {city,color:planColors[destinations.length % planColors.length],content_origin:'user-api',date:'AI 新建旅行计划',title:patch.title || `${city}${duration}日旅行计划`,kicker:patch.kicker || `${duration}日旅行规划 · AI 检索生成`,intro:patch.intro || `这是一份为${city}准备的${duration}天旅行计划。`,overview:patch.overview || buildOverview(city,duration,patch.waypoint),highlights:patch.highlights || [...fallback.highlights],routes:(patch.routes || fallback.routes).map(row => row.includes('|') ? row : `⌁|${row}`),food:patch.food || [...fallback.food],accommodation:patch.accommodation || [...fallback.accommodation],daily_stays:patch.daily_stays || buildDailyStays(city,duration),packing:patch.packing || fallback.packing,quote:patch.quote || fallback.quote};
         destinations.push(newItem);
         active = destinations.length - 1;
-        persistTravelPlans();
+        if (!await saveOrRollback()) return;
         renderEntry();
         showAIResponse(`<p>已创建 <em>${escapeHTML(city)}</em> 的新旅行记录，并切换到新页面。</p>`);
         return;
       }
       if (proposal.operation === 'update_profile') {
-        const current = JSON.parse(localStorage.getItem('travel-profile') || '{}');
-        localStorage.setItem('travel-profile',JSON.stringify({...current,...proposal.patch?.profile}));
+        accountProfile = {...accountProfile,...proposal.patch?.profile};
+        if (!await saveOrRollback()) return;
         showAIResponse('<p>已更新旅行偏好档案。</p>');
       }
     }
@@ -1595,15 +1678,34 @@
       $('#profilePhoto').hidden = false;
       $('#profileFallback').hidden = true;
     }
+    function clearProfilePhoto() {
+      $('#profilePhoto').removeAttribute('src');
+      $('#profilePhoto').hidden = true;
+      $('#profileFallback').hidden = false;
+    }
     $('#profileUpload').addEventListener('change',() => {
       const file = $('#profileUpload').files?.[0];
       if (!file) return;
+      if (!/^image\/(?:png|jpeg|gif|webp)$/i.test(file.type) || file.size > 512 * 1024) {
+        showAIResponse('<p>头像须为 PNG/JPEG/GIF/WebP，且不超过 512 KiB。</p>');
+        $('#profileUpload').value = ''; return;
+      }
+      if (!currentAccount) { showAuth('login'); $('#profileUpload').value = ''; return; }
+      const previousPhoto = accountProfilePhoto;
       const reader = new FileReader();
-      reader.addEventListener('load',() => { showProfilePhoto(reader.result); localStorage.setItem('travel-profile-photo',reader.result); });
+      reader.addEventListener('load',async () => {
+        accountProfilePhoto = reader.result;
+        showProfilePhoto(accountProfilePhoto);
+        try { await persistTravelPlans(); }
+        catch (error) {
+          accountProfilePhoto = previousPhoto;
+          if (previousPhoto) showProfilePhoto(previousPhoto); else clearProfilePhoto();
+          showAIResponse(`<p>头像保存失败：${escapeHTML(error.message)}</p>`);
+        }
+        $('#profileUpload').value = '';
+      });
       reader.readAsDataURL(file);
     });
-    const savedPhoto = localStorage.getItem('travel-profile-photo');
-    if (savedPhoto) showProfilePhoto(savedPhoto);
     $('#aiToggle').addEventListener('click',() => {
       const open = !$('#aiComposer').classList.contains('open');
       setAIComposerOpen(open);
@@ -1741,7 +1843,7 @@
       const button = event.target.closest('[data-ai-action]');
       if (!button) return;
       const action = button.dataset.aiAction;
-      if (action === 'confirm') executePendingAIAction();
+      if (action === 'confirm') await executePendingAIAction();
       if (action === 'cancel') { pendingAIAction = null; showAIResponse('<p>已取消，本次没有修改任何旅行记录。</p>'); }
       if (action === 'modify-from-answer') await modifyPlanFromAnswer(lastAIResponse);
       if (action === 'choose') await askTravelAI(`请为${button.dataset.city}创建一份旅行计划`);
@@ -1766,11 +1868,18 @@
         }
         return;
       }
-      await refreshAccountSession();
+      const session = await refreshAccountSession();
+      try {
+        if (session.authenticated) await loadAccountPageState();
+        else resetToColdStartState();
+      } catch (error) {
+        resetToColdStartState();
+        showAIResponse(`<p>账号页面加载失败：${escapeHTML(error.message)}</p>`);
+      }
       renderEntry();
       const info = destinations[active]?._share;
       if (info?.id) {
-        try { await loadRemotePlan(info.id,info.token,active); persistTravelPlans(); renderEntry(); } catch {}
+        try { await loadRemotePlan(info.id,info.token,active); await persistTravelPlans(); renderEntry(); } catch {}
       }
     }
     initializePage();
