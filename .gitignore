@@ -27,5 +27,6 @@ contact-sheet.*
 infra/
 scripts/deploy-azure.ps1
 deploy*.zip
+voyageai-deploy.zip
 appservice-logs/
 appservice-logs*.zip

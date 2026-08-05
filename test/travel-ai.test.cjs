@@ -615,9 +615,14 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /renderHighlights\(data\.city,data\.highlights,\{coldStart:data\.content_origin === 'cold-start'\}\)/);
   assert.match(html, /function buildDailyStays\(city,duration\)/);
   assert.match(html, /function deduplicateDestinations\(\)/);
-  assert.match(html, /const coldStartTemplates = new Map\(destinations\.map/);
-  assert.match(html, /城市代表街区\|经典地标/);
-  assert.match(html, /restoreTravelPlans\(\);\s*deduplicateDestinations\(\);/);
+  assert.match(html, /const coldStartDestinations = JSON\.parse\(JSON\.stringify\(destinations\)\)/);
+  assert.match(html, /apiJSON\('\/api\/account\/state'/);
+  assert.match(html, /async function loadAccountPageState\(\)/);
+  assert.match(html, /function resetToColdStartState\(\)/);
+  assert.match(html, /function readLegacyAccountState\(\)/);
+  assert.match(html, /await persistTravelPlans\(\);\s*clearLegacyAccountState\(\)/);
+  assert.doesNotMatch(html, /localStorage\.getItem\('travel-profile'/);
+  assert.doesNotMatch(html, /localStorage\.setItem\('travel-profile-photo'/);
   assert.match(html, /const DEFAULT_CURRENCY = \{ code:'CNY', label:'人民币', symbol:'¥' \}/);
   assert.match(html, /ALLOWED_EDITOR_CLASSES/);
   assert.match(html, /function startInlineEditing\(\)/);
@@ -625,8 +630,9 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /function sanitizeRichHTML\(value\)/);
   assert.match(html, /ALLOWED_EDITOR_TAGS/);
   assert.match(html, /\.editable-region\[contenteditable="true"\]/);
-  assert.match(html, /localStorage\.setItem\(PLAN_STORAGE_KEY,JSON\.stringify\(destinations\)\)/);
-  assert.match(html, /if \(!persistTravelPlans\(\)\)/);
+  assert.match(html, /method:'PUT',headers:\{'content-type':'application\/json'\}/);
+  assert.match(html, /await persistTravelPlans\(\)/);
+  assert.match(html, /item\.content_origin = 'user-edit'/);
   assert.doesNotMatch(html, /id="planEditorModal"/);
   assert.match(html, /data-ai-action="modify-from-answer">根据回答修改行程<\/button>/);
   assert.match(html, /async function modifyPlanFromAnswer\(response\)/);
@@ -647,7 +653,7 @@ test('browser code calls the backend and no longer invokes the keyword mock', ()
   assert.match(html, /id="aiSelectionQuote"[^>]*hidden/);
   assert.match(html, /function captureAISelection\(\)/);
   assert.match(html, /answer_context:options\.answerContext/);
-  assert.match(html, /pendingAIAction = \{\.\.\.payload\.proposal,targetIndex:options\.targetIndex\};\s*executePendingAIAction\(\)/);
+  assert.match(html, /pendingAIAction = \{\.\.\.payload\.proposal,targetIndex:options\.targetIndex\};\s*await executePendingAIAction\(\)/);
   assert.match(html, /修改内容：\$\{escapeHTML\(proposal\.summary\)\}/);
   assert.match(html, /if \(!open\) \$\('#aiResponse'\)\.classList\.remove\('show'\)/);
   assert.match(html, /id="apiSettingsButton"[^>]*>模型 API 设置<\/button>/);

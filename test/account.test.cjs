@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createServer } = require('../server.cjs');
-const { createMemoryAccountStore } = require('../lib/account-store.cjs');
+const { accountIdForEmail, createMemoryAccountStore } = require('../lib/account-store.cjs');
 
 async function withServer(run) {
   const server = createServer({
@@ -129,6 +129,114 @@ test('public demo uses only the server-side key and enforces its daily allowance
     assert.equal(limited.status, 429);
     assert.equal((await limited.json()).error.code, 'PUBLIC_DEMO_LIMIT_REACHED');
     assert.deepEqual(authorizations, ['Bearer server-only-demo-key']);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('page state is account-scoped and starts separately from the shared cold-start page', async () => {
+  await withServer(async base => {
+    const anonymous = await fetch(`${base}/api/account/state`);
+    assert.equal(anonymous.status, 401);
+
+    const register = async email => {
+      const response = await fetch(`${base}/api/auth/register`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password: 'long-password-123' })
+      });
+      assert.equal(response.status, 201);
+      return cookieFrom(response);
+    };
+    const firstCookie = await register('state-one@example.com');
+    const secondCookie = await register('state-two@example.com');
+
+    const firstColdStart = await (await fetch(`${base}/api/account/state`, { headers: { cookie: firstCookie } })).json();
+    const secondColdStart = await (await fetch(`${base}/api/account/state`, { headers: { cookie: secondCookie } })).json();
+    assert.deepEqual(firstColdStart, { version: 0, state: null });
+    assert.deepEqual(secondColdStart, { version: 0, state: null });
+
+    const accountState = {
+      plans: [{
+        city: '京都', color: '#ffffff', title: '我的手动修改', intro: '仅属于账号一',
+        overview: ['Day 1｜抵达'], highlights: ['哲学之道'], routes: ['⌁|步行'], food: ['豆腐料理'],
+        accommodation: ['祇园'], daily_stays: ['Day 1｜祇园｜人民币 ¥800'], packing: '轻装', quote: '出发',
+        content_origin: 'user-edit'
+      }],
+      profile: { travel_style: '舒适充电' }, profile_photo: '', active_index: 0
+    };
+    const saved = await fetch(`${base}/api/account/state`, {
+      method: 'PUT', headers: { 'content-type': 'application/json', cookie: firstCookie },
+      body: JSON.stringify({ version: 0, state: accountState })
+    });
+    assert.equal(saved.status, 200);
+    assert.equal((await saved.json()).version, 1);
+
+    const restored = await (await fetch(`${base}/api/account/state`, { headers: { cookie: firstCookie } })).json();
+    assert.equal(restored.version, 1);
+    assert.equal(restored.state.plans[0].title, '我的手动修改');
+    assert.equal(restored.state.plans[0].content_origin, 'user-edit');
+    assert.equal(restored.state.profile.travel_style, '舒适充电');
+
+    const stillColdStart = await (await fetch(`${base}/api/account/state`, { headers: { cookie: secondCookie } })).json();
+    assert.deepEqual(stillColdStart, { version: 0, state: null });
+
+    const staleWrite = await fetch(`${base}/api/account/state`, {
+      method: 'PUT', headers: { 'content-type': 'application/json', cookie: firstCookie },
+      body: JSON.stringify({ version: 0, state: accountState })
+    });
+    assert.equal(staleWrite.status, 409);
+    assert.equal((await staleWrite.json()).error.code, 'ACCOUNT_STATE_CONFLICT');
+  });
+});
+
+test('concurrent account state writes reject one stale update instead of overwriting it', async () => {
+  const baseStore = createMemoryAccountStore();
+  let arrivals = 0;
+  let releaseWrites;
+  const writeGate = new Promise(resolve => { releaseWrites = resolve; });
+  const accountStore = {
+    ...baseStore,
+    async saveAccount(account) {
+      arrivals += 1;
+      if (arrivals <= 2) {
+        if (arrivals === 2) releaseWrites();
+        await writeGate;
+      }
+      return baseStore.saveAccount(account);
+    }
+  };
+  const server = createServer({
+    env: { LLM_PROVIDER: 'openai', ACCOUNT_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'), AUTH_RATE_LIMIT_PER_MINUTE: '100' },
+    accountStore
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const registered = await fetch(`${base}/api/auth/register`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'concurrent@example.com', password: 'long-password-123' })
+    });
+    const cookie = cookieFrom(registered);
+    const editToken = 'secret-edit-token-12345678901234567890';
+    const stateFor = title => ({
+      plans: [{
+        city: '京都', title, overview: [], highlights: [], routes: [], food: [], accommodation: [], daily_stays: [],
+        _share: { id: 'share_12345678901234567890', token: editToken, version: 1 }
+      }],
+      profile: {}, profile_photo: '', active_index: 0
+    });
+    const responses = await Promise.all(['first', 'second'].map(title => fetch(`${base}/api/account/state`, {
+      method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ version: 0, state: stateFor(title) })
+    })));
+    assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
+    const conflict = responses.find(response => response.status === 409);
+    assert.equal((await conflict.json()).error.code, 'ACCOUNT_STATE_CONFLICT');
+    const stored = await baseStore.readAccount(accountIdForEmail('concurrent@example.com'));
+    assert.equal(JSON.stringify(stored.pageState).includes(editToken), false);
+    assert.ok(stored.pageState.plans[0]._share.encrypted_token);
+    const restored = await (await fetch(`${base}/api/account/state`, { headers: { cookie } })).json();
+    assert.equal(restored.state.plans[0]._share.token, editToken);
   } finally {
     await new Promise(resolve => server.close(resolve));
   }

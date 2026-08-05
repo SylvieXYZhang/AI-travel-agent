@@ -94,7 +94,10 @@ test('health endpoint reports the configured share store', async () => {
   await withServer(async base => {
     const response = await fetch(`${base}/api/health`);
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { status: 'ok', share_store: 'memory', account_store: 'memory', public_demo_enabled: false });
+    assert.deepEqual(await response.json(), {
+      status: 'ok', share_store: 'memory', account_store: 'memory',
+      account_state_persistence: true, public_demo_enabled: false
+    });
   });
 });
 
